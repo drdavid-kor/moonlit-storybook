@@ -14,9 +14,24 @@ Observed on the live prototype on 2026-10-11. These are prototype integration ch
 - Anonymous HTTPS access, protected session cookies, empty libraries for fresh visitors, rejection of known job IDs from a different visitor, private-path 404s, cross-origin rejection and invalid-input rejection were checked.
 - JavaScript syntax and the Wrangler build dry run passed. No application errors appeared in the observed browser console.
 
-画面为程序绘制的 SVG 模板，AI 输出正文与画面参数；这些检查不代表完成了逐幕 AI 插画、视频生成或教育效果验证。
+以上为初版 SVG 模板阶段的验证。逐幕 AI 插画的后续验证见下；仍未生成视频或验证儿童学习效果。
 
 Raw runtime records, provider receipts and browser session data remain local and are excluded from the public repository. The README preview is a curated screenshot of generated demo covers.
+
+## AI illustration upgrade / 逐幕插画升级
+
+Verified on production on 2026-10-11:
+
+- One newly prepared book completed six distinct 2048×1152 illustrations. Prompts use the actual page text and visual description; the five later pages used its first illustration as a reference.
+- An existing six-page book acquired six illustrations without regenerating its story text. Its first page and a later boat scene were checked in the browser.
+- A real continuation moved the bear into a boat with a lantern on a lake. It generated a new illustration using an owned prior image reference, retaining the bear's scarf and outfit.
+- Known image URLs returned 404 in a different anonymous session. Foreign-session book upgrades and image references were rejected before generation.
+- Repeating an accepted request returned the same job. Credential-free tests covered completed-image reuse, interrupted-call recovery, no automatic paid retry, image MIME/signature validation and removal of UI image metadata from story history.
+- Desktop and 390×844 browser views displayed complete page illustrations and usable reading controls. SVG atmosphere remained active; template actors were hidden on illustrated pages. This is viewport simulation, not physical-device testing.
+- A small lettering artifact in one old-book illustration was found during visual review and corrected with one explicit image edit. Prompts now also prohibit lettering after the story data. Representative visual checks do not guarantee every future illustration will match every detail.
+- Images are private R2 objects. D1 deletion cascades were checked locally; production migration retained the removal of all daily generation caps.
+
+New books wait for their illustration steps before completing. Failed images are labelled; their text remains readable. AI character movement and video generation are not implemented.
 
 ## Public repository checks / 公开仓库整理验证
 

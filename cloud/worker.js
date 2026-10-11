@@ -1,5 +1,6 @@
 import { WorkflowEntrypoint } from 'cloudflare:workers';
 import { validate, completionRequest, storyResult } from './story.js';
+import { DEFAULT_IMAGE_MODEL, imageRoute, imageKey, initializeIllustrations, attachIllustrations, illustrateRecord } from './illustration.js';
 
 const FAILED = '这次没有得到可用的故事。请求没有自动重试；已保存的故事仍可阅读。 / No usable story was returned. No automatic retry.';
 const UNKNOWN = '这次生成的结果尚不确定，没有自动重复生成。可以先阅读已保存的故事。 / Generation outcome is unknown; no automatic retry.';
@@ -64,7 +65,7 @@ async function provider(env, path, body, timeout) {
 
 function pending(row) { return { id: row.id, status: 'pending' }; }
 async function recordFor(env, row) {
-  if (row.record) return JSON.parse(row.record);
+  if (row.record) return attachIllustrations(env, JSON.parse(row.record));
   if (row.kind !== 'asr' && Date.now() - row.created_at > 180000) {
     // A terminal cloud failure must not leave the browser polling forever.
     try {
@@ -76,13 +77,22 @@ async function recordFor(env, row) {
       }
     } catch { /* The durable task may still be running. */ }
   }
-  return pending(row);
+  const progress = await env.DB.prepare("SELECT COUNT(*) AS total, SUM(status = 'completed') AS completed FROM illustrations WHERE job_id = ?").bind(row.id).first();
+  return { ...pending(row), ...(progress.total ? { phase: 'illustrating', illustration_completed: progress.completed || 0, illustration_total: progress.total } : {}) };
 }
 
 async function api(request, env, user, url) {
   const path = url.pathname;
   if (request.method === 'GET') {
-    if (path === '/api/status') return json({ configured: !!env.OPENROUTER_API_KEY, model: env.STORYBOOK_MODEL });
+    if (path === '/api/status') return json({ configured: !!env.OPENROUTER_API_KEY, model: env.STORYBOOK_MODEL, image_model: env.IMAGE_MODEL || DEFAULT_IMAGE_MODEL });
+    const image = path.match(imageRoute);
+    if (image) {
+      const permitted = await env.DB.prepare("SELECT i.status FROM illustrations i JOIN jobs j ON j.id = i.job_id WHERE i.job_id = ? AND i.page_index = ? AND j.owner = ? AND i.status = 'completed'").bind(image[1], Number(image[2]), user.owner).first();
+      if (!permitted) return json({ error: 'Illustration unavailable.' }, 404);
+      const object = await env.ART.get(imageKey(image[1], Number(image[2])));
+      if (!object) return json({ error: 'Illustration unavailable.' }, 404);
+      return new Response(object.body, { headers: { 'Content-Type': object.httpMetadata.contentType, 'Cache-Control': 'no-store' } });
+    }
     if (path === '/api/library') {
       const rows = await env.DB.prepare("SELECT record FROM jobs WHERE owner = ? AND kind = 'book' AND status = 'completed' ORDER BY created_at DESC LIMIT 30").bind(user.owner).all();
       return json({ books: rows.results.map(r => JSON.parse(r.record)) });
@@ -94,13 +104,34 @@ async function api(request, env, user, url) {
     }
     return json({ error: 'Not found.' }, 404);
   }
-  if (request.method !== 'POST' || !['/api/generate', '/api/transcribe'].includes(path)) return json({ error: 'Not found.' }, 404);
+  if (request.method !== 'POST' || !['/api/generate', '/api/transcribe', '/api/illustrate'].includes(path)) return json({ error: 'Not found.' }, 404);
   if (request.headers.get('Origin') !== url.origin) throw new ClientError('Same-origin requests required.', 403);
   if (!env.OPENROUTER_API_KEY) return json({ error: 'Story generation is temporarily unavailable.' }, 503);
   const data = await readJson(request, path === '/api/transcribe' ? 2000000 : 80000);
+  if (path === '/api/illustrate') {
+    if (!data || typeof data.id !== 'string' || !/^[a-f0-9]{24}$/.test(data.id)) throw new ClientError('Invalid story identifier.');
+    const row = await env.DB.prepare("SELECT record FROM jobs WHERE id = ? AND owner = ? AND kind IN ('book', 'turn') AND status = 'completed'").bind(data.id, user.owner).first();
+    if (!row) return json({ error: 'Story unavailable in this browser.' }, 404);
+    const record = await attachIllustrations(env, JSON.parse(row.record));
+    if (!record.metadata.illustration_status) {
+      await initializeIllustrations(env, record);
+      try { await env.ILLUSTRATOR.create({ id: 'art-' + data.id, params: { id: data.id } }); }
+      catch {
+        let exists = false;
+        try { exists = (await (await env.ILLUSTRATOR.get('art-' + data.id)).status()).status !== 'unknown'; } catch { /* No confirmed task. */ }
+        if (!exists) await env.DB.prepare("UPDATE illustrations SET status = 'failed' WHERE job_id = ? AND status = 'pending'").bind(data.id).run();
+      }
+    }
+    return json({ id: data.id }, 202);
+  }
   if (path === '/api/generate') {
     let params;
     try { params = validate(data); } catch (e) { throw new ClientError(e.message); }
+    for (const path of params.reference_illustrations || []) {
+      const match = path.match(imageRoute);
+      const owned = await env.DB.prepare("SELECT i.job_id FROM illustrations i JOIN jobs j ON j.id = i.job_id WHERE i.job_id = ? AND i.page_index = ? AND j.owner = ? AND i.status = 'completed'").bind(match[1], Number(match[2]), user.owner).first();
+      if (!owned) throw new ClientError('Reference illustration unavailable in this browser.');
+    }
     const id = (await digest(user.owner + ':' + data.request_id)).slice(0, 24);
     const previous = await env.DB.prepare('SELECT id, params FROM jobs WHERE id = ? AND owner = ?').bind(id, user.owner).first();
     if (previous) {
@@ -142,7 +173,7 @@ async function api(request, env, user, url) {
 export class StoryGeneration extends WorkflowEntrypoint {
   async run(event, step) {
     const id = event.payload.id;
-    const record = await step.do('generate story once', { retries: { limit: 0, delay: '1 second' }, timeout: '150 seconds' }, async () => {
+    let record = await step.do('generate story once', { retries: { limit: 0, delay: '1 second' }, timeout: '150 seconds' }, async () => {
       const row = await this.env.DB.prepare('SELECT * FROM jobs WHERE id = ?').bind(id).first();
       if (!row) return { id, status: 'failed', error: UNKNOWN };
       if (row.record) return JSON.parse(row.record);
@@ -160,11 +191,27 @@ export class StoryGeneration extends WorkflowEntrypoint {
         return { id, status: 'failed', error: FAILED };
       }
     });
+    if (record.status === 'completed') record = await illustrateRecord(this.env, step, record);
     // Retrying this storage step is safe; it does not repeat the model request.
     await step.do('save result', async () => {
       await this.env.DB.prepare('UPDATE jobs SET status = ?, record = ? WHERE id = ?').bind(record.status, JSON.stringify(record), id).run();
     });
     return { id, status: record.status };
+  }
+}
+
+// Add illustrations to a saved book or turn without regenerating its text.
+export class StoryIllustration extends WorkflowEntrypoint {
+  async run(event, step) {
+    const id = event.payload.id;
+    const original = await step.do('load saved book', async () => {
+      const row = await this.env.DB.prepare("SELECT record FROM jobs WHERE id = ? AND kind IN ('book', 'turn') AND status = 'completed'").bind(id).first();
+      if (!row) throw new Error('Saved book unavailable.');
+      return JSON.parse(row.record);
+    });
+    const record = await illustrateRecord(this.env, step, original);
+    await step.do('save illustrated book', () => this.env.DB.prepare('UPDATE jobs SET record = ? WHERE id = ?').bind(JSON.stringify(record), id).run());
+    return { id, status: record.metadata.illustration_status };
   }
 }
 
@@ -191,10 +238,16 @@ export default {
     return response;
   },
   async scheduled(event, env, ctx) {
-    // Public demo records expire after 30 days; no recordings are persisted.
-    ctx.waitUntil(env.DB.batch([
-      env.DB.prepare('DELETE FROM jobs WHERE created_at < ?').bind(Date.now() - 30 * 86400000),
-      env.DB.prepare("DELETE FROM quota WHERE day < date('now', '-32 days')")
-    ]));
+    // Delete private images before expiring their stories; no recordings persist.
+    ctx.waitUntil((async () => {
+      const cutoff = Date.now() - 30 * 86400000;
+      const expired = await env.DB.prepare('SELECT i.job_id, i.page_index FROM illustrations i JOIN jobs j ON j.id = i.job_id WHERE j.created_at < ?').bind(cutoff).all();
+      const keys = expired.results.map(row => imageKey(row.job_id, row.page_index));
+      for (let start = 0; start < keys.length; start += 1000) await env.ART.delete(keys.slice(start, start + 1000));
+      await env.DB.batch([
+        env.DB.prepare('DELETE FROM jobs WHERE created_at < ?').bind(cutoff),
+        env.DB.prepare("DELETE FROM quota WHERE day < date('now', '-32 days')")
+      ]);
+    })());
   }
 };

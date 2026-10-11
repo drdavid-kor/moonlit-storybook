@@ -15,6 +15,7 @@ npm ci
 cp cloud/wrangler.example.jsonc cloud/wrangler.jsonc
 npx wrangler login
 npx wrangler d1 create moonlit-storybook-db
+npx wrangler r2 bucket create moonlit-storybook-art
 ```
 
 Copy the database ID returned by the last command into `d1_databases[0].database_id` in `cloud/wrangler.jsonc`. Choose unique Worker, database and Workflow names if those resources already exist in your account. Add `account_id` if you use multiple accounts.
@@ -44,13 +45,16 @@ If you renamed the database, use its new name in the migration command. Workflow
 ## Runtime / 运行方式
 
 - Static assets contain only `public/`. Worker source, local records, receipts and credentials are not publicly served.
-- Parent knowledge settings trigger three sequential complete books. The home shelf changes only when all three are ready. Cover selection reads the saved result.
+- Parent knowledge settings trigger three sequential complete books with six generated illustrations each. The home shelf changes only when the three books have finished preparing. Cover selection reads the saved result; the first illustration supplies its cover.
+- Seedream 5.0 Flash is called through OpenRouter's image API at 2K, 16:9. Each prompt includes the exact page text and visual description, fixed hero appearance and book context. Later pages reference the first illustration. A continuation references the first and most recent available illustration and paints the new action.
+- Private R2 objects are served through an owner-checked same-origin API. Provider keys and base64 receipts are never sent to the browser. Existing books get illustrations when opened, preserving their story text.
 - D1 records belong to an anonymous session. Every job/library query includes its owner; a known job ID does not grant access.
 - A durable Workflow executes each paid generation once with a persisted claim and zero provider retries. Saving a returned result is a separate retriable step. Refreshing polls the existing job.
+- Image generation also uses per-page persisted claims and zero retries, with at most three concurrent image steps per book. A failed illustration leaves the text readable and shows an explicit unavailable message; completed illustrations are reused.
 - POST requires the same Origin. Request sizes, supported scenes/characters/props, schemas, interaction placement and hero continuity are checked.
 - No daily generation cap is enforced globally, per anonymous session or per hashed IP. Daily usage units are still recorded in UTC+8 for observability: a book uses 10 units, a continuation 3 and transcription 2. These counters do not restrict generation or cap provider spending.
 - Up to two pending jobs per session and six accepted jobs per minute per IP. These short-term checks and usage recording use the same D1 insertion transaction.
-- A daily cron removes records over 30 days old. Audio is processed in memory and not persisted.
+- A daily cron removes records and private illustrations over 30 days old. Audio is processed in memory and not persisted.
 - `noindex, nofollow` keeps the demo unlisted in search intent; the URL itself is public, not a password.
 
 公开版按匿名会话隔离故事库；生成任务可在刷新后继续等待同一任务。整站、每个会话和每个 IP 均无每日生成上限，保留短时频率与并发限制。已保存故事可随时阅读，失败不会用未完成的一组替换首页。故事与输入由每日任务清理，录音不存储。

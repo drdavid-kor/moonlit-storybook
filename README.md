@@ -8,12 +8,14 @@ An immersive AI storybook prototype. Parents set the knowledge points and prepar
 
 ![Prepared story covers / 已准备的故事封面](docs/preview.png)
 
+![AI page illustration with gentle animation / AI 逐幕插画与轻动画](docs/illustration-preview.png)
+
 ## How it works / 体验流程
 
 1. 家长输入 1–3 个知识点，一行一个，并选择年龄段。无需填写故事标题或剧情。 Parents enter one to three knowledge points and an age band.
-2. AI 依次准备三个完整的六幕童书。一个知识点可以演绎不同故事；多个知识点轮流作为故事核心。 AI prepares three six-scene books, with different stories around one point or core points assigned in rotation.
+2. AI 依次准备三个完整的六幕童书，并根据每幕正文生成插画。一个知识点可以演绎不同故事；多个知识点轮流作为故事核心。 AI prepares three six-scene books and illustrates each page from its actual story text.
 3. 三本都完成后，首页一起展示实际封面和故事名称。孩子点开即可阅读，不触发新的故事生成。 The finished covers appear together; choosing a cover opens a saved book immediately.
-4. 孩子可以探索人物和道具，输入自己的想法，让 AI 续写下一幕。 Children explore characters and objects, then submit an idea to change the next scene.
+4. 孩子输入自己的想法，让 AI 续写下一幕并绘制新的画面。 Children submit an idea to change the next scene and its illustration.
 
 准备过程中刷新会继续查询当前任务。失败后可以保持相同设置，继续准备剩余故事，复用已经完成的部分；不自动重试结果不确定的付费调用。
 
@@ -34,7 +36,7 @@ Open [http://127.0.0.1:8766](http://127.0.0.1:8766). AI calls run on the server;
 
 打开本机地址即可。API Key 只在服务端使用。未配置 Key 时页面仍可打开，生成功能会提示需要配置。
 
-The default text model is `google/gemini-3.8-flash`; voice transcription uses `qwen/qwen3-asr-0.6b`. Model availability can change. Set `STORYBOOK_MODEL` to override the local text model after checking its structured-output support.
+The default text model is `google/gemini-3.8-flash`; illustrations use `bytedance-seed/seedream-5-0-flash` through OpenRouter's image API; voice transcription uses `qwen/qwen3-asr-0.6b`. Model availability can change. Set `STORYBOOK_MODEL` to override the local text model after checking its structured-output support.
 
 若本机安装了 Codex OpenRouter skill，服务也可以使用它的私有凭据助手；`OPENROUTER_HELPER` 可指定兼容助手的路径。普通克隆无需安装该 skill，仓库附带只读取环境变量的小型客户端。
 
@@ -42,7 +44,7 @@ An installed Codex OpenRouter skill is optional. Its compatible credential helpe
 
 ## Cloudflare deployment / 云端部署
 
-The public version uses Cloudflare Workers, D1 and Workflows. Node.js and npm are needed for Wrangler. See [cloud/DEPLOYMENT.md](cloud/DEPLOYMENT.md) for the complete setup.
+The public version uses Cloudflare Workers, D1, private R2 image storage and Workflows. Node.js and npm are needed for Wrangler. See [cloud/DEPLOYMENT.md](cloud/DEPLOYMENT.md) for the complete setup.
 
 公开版使用 Worker 提供 API 与静态页面、D1 保存匿名故事库、Workflows 执行持久生成任务。生产环境配置留在本地；仓库提供可填写的部署模板。
 
@@ -58,17 +60,18 @@ npm run build
 
 ## Controls and boundaries / 交互与原型边界
 
-- Four worlds; three animal heroes; animated SVG scenes. 四个世界、三个动物主角，画面由 SVG 图层和轻动画呈现。
+- Story-specific 2K illustrations with a watercolor art direction and SVG atmosphere. 每幕正文驱动 2K 插画，统一水彩画风，保留 SVG 氛围动画。
 - Bilingual subtitles, keyboard navigation, optional system narration and voice-to-text input. 支持双语字幕、键盘翻幕、系统朗读与语音转文字。
-- AI generates story text and scene parameters, plus continuations based on the actual reading history. AI 生成正文、受约束的画面参数和结合历史的互动续写。
-- Images and video are not generated per scene. The prototype does not establish children's learning outcomes. 尚未逐幕生成 AI 插画或视频，也没有验证儿童学习效果。
+- Later pages use the first illustration as a character/style reference. New story turns use available prior illustrations. 后续页参考首幕的角色与画风，续写参考已生成的画面。
+- Old books are illustrated when opened, without rewriting their text. A failed image is labelled and the story stays readable. 旧故事打开后补画；插画失败有明确提示，文字仍可阅读。
+- Scene illustrations are generated; video and character animation are not generated. The prototype does not establish children's learning outcomes. 已实现逐幕插画；尚未生成视频或角色动作动画，也没有验证儿童学习效果。
 - Concept explanations refer to the original six-scene story; changed branches do not reuse its ending as their own learning conclusion. 原始概念说明只对应原始主线；共同创作分支不直接套用原始结论。
 
 ## Data and credentials / 数据与凭据
 
-Knowledge points, story ideas and audio are processed through OpenRouter. Audio is forwarded for transcription and not stored by this app. Calls may incur provider charges.
+Knowledge points, story ideas, page text and reference illustrations are processed through OpenRouter. Audio is forwarded for transcription and not stored by this app. Calls may incur provider charges. Images are private and fetched through the same session-checked API as stories.
 
-知识点、互动文字与录音通过 OpenRouter 处理。录音仅用于转录，本应用不保存录音。真实模型调用可能产生费用。
+知识点、故事文字、互动想法、参考插画与录音通过 OpenRouter 处理。录音仅用于转录，本应用不保存录音。真实模型调用可能产生费用。图片通过同源接口按会话读取。
 
 The cloud library belongs to an anonymous browser session protected by an HttpOnly, Secure, SameSite cookie. It has no accounts or cross-device synchronization. Records older than 30 days are removed by a daily cleanup; deletion can take up to one extra day. Browser settings, shelf IDs and recent branches stay in localStorage.
 
@@ -96,6 +99,6 @@ See [docs/VERIFICATION.md](docs/VERIFICATION.md) for what was verified on the li
 - `public/`: fullscreen UI, styling, SVG scene renderer and interaction logic.
 - `server.py`: local Python API and asynchronous generation.
 - `scripts/openrouter_client.py`: portable server-side OpenRouter client.
-- `cloud/`: Worker, constrained story schemas, D1 migrations and deployment template.
+- `cloud/`: Worker, constrained story schemas, shared art direction, private-image generation, D1 migrations and deployment template.
 - `docs/`: preview and verification summary.
 - `data/`, `verification/`: local runtime and receipts, ignored by Git.

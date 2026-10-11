@@ -1,0 +1,9 @@
+{
+  "model": "bytedance-seed/seedream-5-0-flash",
+  "style": "An exquisite children's picture-book illustration, hand-painted watercolor and gouache on softly textured paper, delicate colored-pencil detail, expressive animal faces, rich layered foliage, soft cinematic light, warm luminous accents, gentle and inviting. Consistent art direction across this book. Paint a complete scene with characters performing the actual action, not separate icons or a generic landscape. No text, letters, captions, borders, panels or watermark. Wide 16:9 composition; keep the main characters and important action in the middle 60% so they stay visible on smaller screens. Keep the bottom 20% visually quiet for subtitles. Follow the story's actual time, location, emotion and visible objects.",
+  "heroes": {
+    "bear": "a small honey-brown bear cub with round ears, a cream muzzle and belly, wearing a soft sage-green scarf",
+    "fox": "a small warm-russet fox with triangular ears, a cream muzzle and tail tip, wearing a soft sage-green scarf",
+    "rabbit": "a small ivory rabbit with long pink-lined ears, wearing a soft sage-green scarf"
+  }
+}

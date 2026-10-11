@@ -25,6 +25,7 @@
     <div class="world-label"><span id="world-label">月光湖畔</span><small id="world-label-en">MOONLIT LAKE</small></div>
   </section>
   <section id="reader-view" class="reader-view" aria-label="动态绘本 Story world" hidden>
+    <div id="artwork-status" class="artwork-status" role="status" hidden></div>
     <button id="hero-hotspot" class="hotspot hero-hotspot" aria-label="和主角说话 Talk to the character"><span>✦</span></button>
     <button id="prop-hotspot" class="hotspot prop-hotspot" aria-label="探索故事里的物件 Explore the story object"><span>✦</span></button>
     <div id="scene-bubble" class="scene-bubble" hidden></div>
@@ -55,7 +56,7 @@
     <p class="tiny-note">故事准备好后，孩子选择封面，直接进入完整绘本。<br>Once ready, your child chooses a cover and starts reading.</p>
   </form>
   <button id="library-button" class="text-button">准备过的故事 · Saved stories →</button>
-  <p class="tiny-note">原型：画面为程序绘制；AI 生成故事与续写。<br>Prototype: illustrated scene templates; AI story & continuation.</p>
+  <p class="tiny-note">AI 根据每幕故事绘制插画，保留轻动画。续写会生成新的画面。<br>AI illustrations follow each scene, with gentle animation. New story turns get new illustrations.</p>
   <p class="tiny-note">公开体验版：知识点、互动文字与录音通过 OpenRouter 处理。故事仅供当前浏览器读取，云端约保留 30 天；录音不保存。<br>Public demo: knowledge points, story ideas and voice input are processed via OpenRouter. Cloud stories are kept for about 30 days; recordings are not stored.</p>
 </dialog>
 <dialog id="library-dialog" class="sheet"><button class="close-dialog" data-close="library-dialog" aria-label="关闭 Close">×</button><p class="overline">A WORLD YOU CAN COME BACK TO</p><h2>还想再读一遍</h2><div id="saved-books" class="saved-books"></div></dialog>

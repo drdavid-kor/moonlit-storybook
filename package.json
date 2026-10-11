@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev:cloud": "wrangler dev --config cloud/wrangler.jsonc --port 8767",
-    "check": "node --check cloud/worker.js && node --check cloud/story.js && node --check public/app.js && node --check public/scene.js",
+    "check": "node --check cloud/worker.js && node --check cloud/story.js && node --check cloud/illustration.js && node --check public/app.js && node --check public/scene.js && node scripts/check-illustrations.mjs",
     "build": "wrangler deploy --config cloud/wrangler.jsonc --dry-run --outdir build",
     "deploy": "wrangler deploy --config cloud/wrangler.jsonc"
   },

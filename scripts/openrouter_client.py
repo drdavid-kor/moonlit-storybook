@@ -25,7 +25,7 @@ def redact(text, key=''):
 
 
 def request(path, body=None, timeout=115):
-    if path not in ('/chat/completions', '/audio/transcriptions'):
+    if path not in ('/chat/completions', '/audio/transcriptions', '/images'):
         raise ValueError('Unsupported OpenRouter endpoint.')
     req = urllib.request.Request(
         'https://openrouter.ai/api/v1' + path,

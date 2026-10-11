@@ -12,7 +12,8 @@
   },
   "vars": {
     "STORYBOOK_MODEL": "google/gemini-3.8-flash",
-    "ASR_MODEL": "qwen/qwen3-asr-0.6b"
+    "ASR_MODEL": "qwen/qwen3-asr-0.6b",
+    "IMAGE_MODEL": "bytedance-seed/seedream-5-0-flash"
   },
   "d1_databases": [
     {
@@ -27,6 +28,11 @@
       "name": "moonlit-story-generation",
       "binding": "STORIES",
       "class_name": "StoryGeneration"
+    },
+    {
+      "name": "moonlit-illustration-upgrade",
+      "binding": "ILLUSTRATOR",
+      "class_name": "StoryIllustration"
     }
   ],
   "triggers": {
@@ -37,5 +43,11 @@
   "observability": {
     "enabled": true,
     "head_sampling_rate": 0.1
-  }
+  },
+  "r2_buckets": [
+    {
+      "binding": "ART",
+      "bucket_name": "moonlit-storybook-art"
+    }
+  ]
 }

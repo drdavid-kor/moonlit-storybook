@@ -39,10 +39,18 @@ export function validate(data) {
     }
   } else {
     if (!Array.isArray(data.history) || data.history.length < 1 || data.history.length > 18) throw new Error('Invalid story history.');
-    data.history.forEach(p => check(p, PAGE));
+    const history = data.history.map(p => {
+      const { illustration, ...page } = p;
+      check(page, PAGE);
+      return page;
+    });
     if (typeof data.input !== 'string' || !data.input.trim() || data.input.trim().length > 320) throw new Error('请说一个简短的想法。 / Share a short idea.');
-    params.history = data.history;
+    params.history = history;
     params.input = data.input.trim();
+    if (data.reference_illustrations !== undefined) {
+      if (!Array.isArray(data.reference_illustrations) || data.reference_illustrations.length > 2 || data.reference_illustrations.some(p => typeof p !== 'string' || !/^\/api\/illustrations\/[a-f0-9]{24}\/[0-5]$/.test(p))) throw new Error('Invalid reference illustration.');
+      params.reference_illustrations = [...new Set(data.reference_illustrations)];
+    }
   }
   return params;
 }

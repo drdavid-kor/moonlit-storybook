@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+.DS_Store
+.env*
+data/
+verification/
+
+node_modules/
+cloud/build/
+**/build/
+cloud/.wrangler/
+.wrangler/
+.dev.vars*
+cloud/wrangler.jsonc

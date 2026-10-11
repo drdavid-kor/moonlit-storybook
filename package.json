@@ -1,0 +1,12 @@
+{
+  "name": "moonlit-storybook",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev:cloud": "wrangler dev --config cloud/wrangler.jsonc --port 8767",
+    "check": "node --check cloud/worker.js && node --check cloud/story.js && node --check public/app.js && node --check public/scene.js",
+    "build": "wrangler deploy --config cloud/wrangler.jsonc --dry-run --outdir build",
+    "deploy": "wrangler deploy --config cloud/wrangler.jsonc"
+  },
+  "devDependencies": { "wrangler": "4.149.0" }
+}

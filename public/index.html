@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#272e4a"><meta name="robots" content="noindex,nofollow"><title>月亮书房 · Moonlit Stories</title>
-  <link rel="stylesheet" href="/styles.css"><script src="/scene.js" defer></script><script src="/app.js" defer></script>
+  <link rel="stylesheet" href="/styles.css"><script src="/scene.js" defer></script><script src="/app.js" type="module"></script>
 </head>
 <body>
 <main id="experience" class="experience">
@@ -53,7 +53,7 @@
     <div class="settings-toggles"><label><input id="bilingual" type="checkbox"> 双语字幕 <span>Bilingual subtitles</span></label><label><input id="motion" type="checkbox" checked> 轻动画 <span>Gentle motion</span></label></div>
     <button id="prepare-submit" class="primary" type="submit">保存并准备三个故事 <span>Prepare three stories ↗</span></button>
     <p id="preparation-note" class="tiny-note" role="status"></p>
-    <p class="tiny-note">故事准备好后，孩子选择封面，直接进入完整绘本。<br>Once ready, your child chooses a cover and starts reading.</p>
+    <p class="tiny-note">先生成三个故事和全部插画，准备完成后才显示封面。孩子点开就能读。<br>All three stories and their illustrations are prepared before covers appear.</p>
   </form>
   <button id="library-button" class="text-button">准备过的故事 · Saved stories →</button>
   <p class="tiny-note">AI 根据每幕故事绘制插画，保留轻动画。续写会生成新的画面。<br>AI illustrations follow each scene, with gentle animation. New story turns get new illustrations.</p>

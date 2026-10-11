@@ -31,7 +31,21 @@ Verified on production on 2026-10-11:
 - A small lettering artifact in one old-book illustration was found during visual review and corrected with one explicit image edit. Prompts now also prohibit lettering after the story data. Representative visual checks do not guarantee every future illustration will match every detail.
 - Images are private R2 objects. D1 deletion cascades were checked locally; production migration retained the removal of all daily generation caps.
 
-New books wait for their illustration steps before completing. Failed images are labelled; their text remains readable. AI character movement and video generation are not implemented.
+New books wait for their illustration steps before completing. Failed images preserve their story text. The stricter child-shelf readiness checks below now exclude incomplete illustrated books. AI character movement and video generation are not implemented.
+
+## Prepared artwork and visible motion / 提前绘图与可见动效
+
+Verified on production on 2026-10-11 after correcting legacy cover selection and illustration overlays:
+
+- A real submission through the parent form prepared three books with six completed illustrations each. D1 confirmed all eighteen images belonged to the same preparation batch and had completed before the covers appeared.
+- The home shelf remained empty during the first and second book's illustration steps. After all three books finished, all three covers appeared with decoded 2048-pixel-wide images and no active preparation indicator.
+- Opening a cover and changing pages immediately used document-local prepared image URLs. The reader entry has no generation call. Production job counts remained at 35 books and four turns through opening, page changes and refresh.
+- Computed camera and SVG ripple transforms changed between observed frames. Floating light opacity also changed. Disabling gentle motion removed the camera animation and hid the SVG overlay; enabling it restored the effects.
+- The SVG overlay is inside the illustration frame and shares the painting's aspect ratio. A 390×844 viewport showed no horizontal overflow, matching artwork/overlay widths and a loaded illustration. The viewport override and original motion preference were restored afterward.
+- Refreshing loaded the same three completed books and prepared their images before rendering covers. The observed browser console had no application errors.
+- Credential-free regression checks cover incomplete legacy shelves, failed-image exclusion, waiting for all image downloads/decodes, reuse on reopening, image-delivery recovery without generation, and scene-specific SVG overlays.
+
+现在由家长提前准备故事与全部插画，载入后再展示封面。未补齐插画的旧故事保留在家长故事库，可由家长明确启动补图；孩子点开不会触发生成。动态效果是插画上的 SVG 氛围叠层与缓慢镜头变化，尚不包含角色肢体动画。
 
 ## Public repository checks / 公开仓库整理验证
 

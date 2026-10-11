@@ -305,7 +305,7 @@ class Handler(BaseHTTPRequestHandler):
                 if record.get('status') == 'pending':
                     record = {'id': job_id, 'status': 'failed', 'error': '服务在生成期间重启，请求结果未知；没有自动重复生成。 / The server restarted; generation outcome is unknown.'}
             return self.send_json(record or {'error': 'Unknown request.'}, 200 if record else 404)
-        files = {'/': 'index.html', '/index.html': 'index.html', '/styles.css': 'styles.css', '/app.js': 'app.js', '/scene.js': 'scene.js'}
+        files = {'/': 'index.html', '/index.html': 'index.html', '/styles.css': 'styles.css', '/app.js': 'app.js', '/scene.js': 'scene.js', '/readiness.js': 'readiness.js'}
         if path not in files:
             return self.send_json({'error': 'Not found.'}, 404)
         file = PUBLIC / files[path]
@@ -316,7 +316,7 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header('Content-Length', str(len(data)))
         self.send_header('Cache-Control', 'no-cache')
         self.send_header('X-Content-Type-Options', 'nosniff')
-        self.send_header('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'")
+        self.send_header('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'")
         self.end_headers()
         self.wfile.write(data)
 

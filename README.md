@@ -14,7 +14,7 @@ An immersive AI storybook prototype. Parents set the knowledge points and prepar
 
 1. 家长输入 1–3 个知识点，一行一个，并选择年龄段。无需填写故事标题或剧情。 Parents enter one to three knowledge points and an age band.
 2. AI 依次准备三个完整的六幕童书，并根据每幕正文生成插画。一个知识点可以演绎不同故事；多个知识点轮流作为故事核心。 AI prepares three six-scene books and illustrates each page from its actual story text.
-3. 三本都完成后，首页一起展示实际封面和故事名称。孩子点开即可阅读，不触发新的故事生成。 The finished covers appear together; choosing a cover opens a saved book immediately.
+3. 三本的全部插画生成并载入后，首页一起展示实际封面和故事名称。孩子点开即可阅读，不触发故事或插画生成。 All page illustrations are generated, downloaded and decoded before covers appear; choosing a cover reuses the prepared images.
 4. 孩子输入自己的想法，让 AI 续写下一幕并绘制新的画面。 Children submit an idea to change the next scene and its illustration.
 
 准备过程中刷新会继续查询当前任务。失败后可以保持相同设置，继续准备剩余故事，复用已经完成的部分；不自动重试结果不确定的付费调用。
@@ -60,10 +60,10 @@ npm run build
 
 ## Controls and boundaries / 交互与原型边界
 
-- Story-specific 2K illustrations with a watercolor art direction and SVG atmosphere. 每幕正文驱动 2K 插画，统一水彩画风，保留 SVG 氛围动画。
+- Story-specific 2K illustrations with watercolor art direction, a gentle camera drift and SVG clouds, floating lights and water ripples where the scene includes water. Motion can be disabled. 每幕正文驱动 2K 水彩插画，叠加缓慢镜头变化、云雾、漂浮光点和水面波光；支持关闭动效。
 - Bilingual subtitles, keyboard navigation, optional system narration and voice-to-text input. 支持双语字幕、键盘翻幕、系统朗读与语音转文字。
 - Later pages use the first illustration as a character/style reference. New story turns use available prior illustrations. 后续页参考首幕的角色与画风，续写参考已生成的画面。
-- Old books are illustrated when opened, without rewriting their text. A failed image is labelled and the story stays readable. 旧故事打开后补画；插画失败有明确提示，文字仍可阅读。
+- Parents can prepare illustrations for old text-only books from the saved-story library, without rewriting their text. Incomplete books are excluded from the child's shelf. 旧故事由家长在故事库中补齐插画；未完成全部插画的绘本不进入孩子的故事卡片。
 - Scene illustrations are generated; video and character animation are not generated. The prototype does not establish children's learning outcomes. 已实现逐幕插画；尚未生成视频或角色动作动画，也没有验证儿童学习效果。
 - Concept explanations refer to the original six-scene story; changed branches do not reuse its ending as their own learning conclusion. 原始概念说明只对应原始主线；共同创作分支不直接套用原始结论。
 

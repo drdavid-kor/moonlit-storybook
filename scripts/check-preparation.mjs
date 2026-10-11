@@ -1,0 +1,40 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import vm from 'node:vm';
+import { isBookReady, selectShelf, createArtworkCache } from '../public/readiness.js';
+
+const book = index => ({ id: String(index).padStart(24, '0'), status: 'completed', params: { preparation_id: 'tonight', story_index: index }, result: { pages: Array.from({ length: 6 }, (_, page) => ({ illustration: { status: 'completed', url: `/api/illustrations/${String(index).padStart(24, '0')}/${page}` } })) } });
+const books = [book(0), book(1), book(2)], ids = books.map(item => item.id);
+const incomplete = structuredClone(books);
+delete incomplete[1].result.pages[5].illustration;
+assert(!isBookReady(incomplete[1]), 'Text completion alone cannot make a child-facing cover ready.');
+assert.deepEqual(selectShelf(incomplete, ids), [], 'An old saved shelf cannot bypass the illustration gate.');
+assert.deepEqual(selectShelf(books, ids).map(item => item.id), ids);
+const failed = structuredClone(books[0]);failed.result.pages[2].illustration.status = 'failed';
+assert(!isBookReady(failed), 'A failed scene must not be advertised as a complete illustrated book.');
+
+let release, calls = 0, settled = false;
+const gate = new Promise(resolve => { release = resolve; });
+const cache = createArtworkCache(async path => { calls++;await gate;return 'blob:' + path; });
+const first = cache.preload(books[0]).then(() => { settled = true; });
+const duplicate = cache.preload(books[0]);
+await new Promise(resolve => setImmediate(resolve));
+assert.equal(calls, 6, 'Duplicate preparation must share the six image loads.');
+assert.equal(settled, false, 'Preparation must wait until every image has loaded and decoded.');
+release();await Promise.all([first, duplicate]);
+await cache.preload(books[0]);assert.equal(calls, 6, 'Opening a prepared cover must reuse the loaded images.');
+await assert.rejects(cache.preload(failed));
+let attempts = 0;
+const recovering = createArtworkCache(async () => { if (++attempts === 1) throw Error('Image delivery failure');return 'blob:loaded'; });
+await assert.rejects(recovering.preload({ ...books[0], result: { pages: [books[0].result.pages[0]] } }));
+await recovering.preload({ ...books[0], result: { pages: [books[0].result.pages[0]] } });
+assert.equal(attempts, 2, 'A failed image download may be retried without repeating image generation.');
+
+const scene = vm.createContext({});vm.runInContext(readFileSync(new URL('../public/scene.js', import.meta.url), 'utf8'), scene);
+const markup = vm.runInContext(`drawScene({setting:'lake',description:{zh:'夕阳下，小熊坐在湖面的小船上。'}},false,{status:'completed',url:'/api/illustrations/${books[0].id}/0'},'blob:prepared')`, scene);
+assert(markup.includes('src="blob:prepared"') && markup.includes('art-ripple') && markup.includes('art-mote'));
+assert(markup.indexOf('illustration-frame') < markup.indexOf('illustration-atmosphere'), 'SVG motion belongs inside the illustration frame.');
+assert(!markup.includes('actor-layer'), 'The generated character must not be covered by a template character.');
+const night = vm.runInContext(`atmosphereArt({setting:'space',description:{zh:'星光照着小兔。'}})`, scene);
+assert(night.includes('art-star') && !night.includes('art-water'));
+console.log('Preparation checks passed: full-book readiness, legacy shelf gating, decoded image reuse, delivery recovery and illustration-anchored SVG effects.');

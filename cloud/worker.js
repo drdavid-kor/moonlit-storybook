@@ -4,7 +4,7 @@ import { DEFAULT_IMAGE_MODEL, imageRoute, imageKey, initializeIllustrations, att
 
 const FAILED = '这次没有得到可用的故事。请求没有自动重试；已保存的故事仍可阅读。 / No usable story was returned. No automatic retry.';
 const UNKNOWN = '这次生成的结果尚不确定，没有自动重复生成。可以先阅读已保存的故事。 / Generation outcome is unknown; no automatic retry.';
-const CSP = "default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self'; img-src 'self' data:; connect-src 'self' https://cloudflareinsights.com; object-src 'none'; base-uri 'none'; frame-ancestors 'none'";
+const CSP = "default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://cloudflareinsights.com; object-src 'none'; base-uri 'none'; frame-ancestors 'none'";
 const json = (value, status = 200) => Response.json(value, { status, headers: { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' } });
 class ClientError extends Error { constructor(message, status = 400) { super(message); this.status = status; } }
 const digest = async text => [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text)))].map(b => b.toString(16).padStart(2, '0')).join('');
@@ -95,7 +95,7 @@ async function api(request, env, user, url) {
     }
     if (path === '/api/library') {
       const rows = await env.DB.prepare("SELECT record FROM jobs WHERE owner = ? AND kind = 'book' AND status = 'completed' ORDER BY created_at DESC LIMIT 30").bind(user.owner).all();
-      return json({ books: rows.results.map(r => JSON.parse(r.record)) });
+      return json({ books: await Promise.all(rows.results.map(r => attachIllustrations(env, JSON.parse(r.record)))) });
     }
     const match = path.match(/^\/api\/jobs\/([a-f0-9]{24})$/);
     if (match) {
@@ -221,7 +221,7 @@ export default {
     let response;
     try {
       if (url.pathname.startsWith('/api/')) response = await api(request, env, user, url);
-      else if (['/', '/index.html', '/styles.css', '/app.js', '/scene.js'].includes(url.pathname) && ['GET', 'HEAD'].includes(request.method)) response = await env.ASSETS.fetch(request);
+      else if (['/', '/index.html', '/styles.css', '/app.js', '/scene.js', '/readiness.js'].includes(url.pathname) && ['GET', 'HEAD'].includes(request.method)) response = await env.ASSETS.fetch(request);
       else response = json({ error: 'Not found.' }, 404);
     } catch (error) {
       if (error instanceof ClientError) response = json({ error: error.message }, error.status);

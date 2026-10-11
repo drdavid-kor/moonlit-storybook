@@ -48,12 +48,12 @@ If you renamed the database, use its new name in the migration command. Workflow
 - D1 records belong to an anonymous session. Every job/library query includes its owner; a known job ID does not grant access.
 - A durable Workflow executes each paid generation once with a persisted claim and zero provider retries. Saving a returned result is a separate retriable step. Refreshing polls the existing job.
 - POST requires the same Origin. Request sizes, supported scenes/characters/props, schemas, interaction placement and hero continuity are checked.
-- Daily demo allowances reset by date in UTC+8: 300 units globally and 90 per anonymous session and hashed IP. A book uses 10 units, a continuation 3 and transcription 2. Accepted failures count. Reading saved books uses no units.
-- Up to two pending jobs per session and six accepted jobs per minute per IP. Quota checks and charges use the same D1 insertion transaction. These units do not guarantee a dollar spending cap.
+- No daily generation cap is enforced globally, per anonymous session or per hashed IP. Daily usage units are still recorded in UTC+8 for observability: a book uses 10 units, a continuation 3 and transcription 2. These counters do not restrict generation or cap provider spending.
+- Up to two pending jobs per session and six accepted jobs per minute per IP. These short-term checks and usage recording use the same D1 insertion transaction.
 - A daily cron removes records over 30 days old. Audio is processed in memory and not persisted.
 - `noindex, nofollow` keeps the demo unlisted in search intent; the URL itself is public, not a password.
 
-公开版按匿名会话隔离故事库；生成任务可在刷新后继续等待同一任务。已保存故事可随时阅读，失败不会用未完成的一组替换首页。故事与输入由每日任务清理，录音不存储。
+公开版按匿名会话隔离故事库；生成任务可在刷新后继续等待同一任务。整站、每个会话和每个 IP 均无每日生成上限，保留短时频率与并发限制。已保存故事可随时阅读，失败不会用未完成的一组替换首页。故事与输入由每日任务清理，录音不存储。
 
 ## Verify and update / 验证与更新
 

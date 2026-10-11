@@ -3,7 +3,6 @@ import { validate, completionRequest, storyResult } from './story.js';
 
 const FAILED = '这次没有得到可用的故事。请求没有自动重试；已保存的故事仍可阅读。 / No usable story was returned. No automatic retry.';
 const UNKNOWN = '这次生成的结果尚不确定，没有自动重复生成。可以先阅读已保存的故事。 / Generation outcome is unknown; no automatic retry.';
-const QUOTA = '今天的故事创作额度用完啦，明天再来。已保存的故事可以继续阅读。 / Today’s demo allowance is used. Saved stories are still available.';
 const CSP = "default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self'; img-src 'self' data:; connect-src 'self' https://cloudflareinsights.com; object-src 'none'; base-uri 'none'; frame-ancestors 'none'";
 const json = (value, status = 200) => Response.json(value, { status, headers: { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' } });
 class ClientError extends Error { constructor(message, status = 400) { super(message); this.status = status; } }
@@ -49,7 +48,6 @@ async function insertJob(env, identity, request, id, requestId, kind, params) {
       SELECT ?, ?, ?, ?, ?, ?, ?, ?, ? WHERE NOT EXISTS (SELECT 1 FROM jobs WHERE owner = ? AND request_id = ?)`)
       .bind(id, identity.owner, ip, requestId, kind, units, day, now, JSON.stringify(params), identity.owner, requestId).run();
   } catch (error) {
-    if (String(error).includes('daily_limit')) throw new ClientError(QUOTA, 429);
     if (/rate_limit|busy_limit/.test(String(error))) throw new ClientError('故事还在慢慢长出来，请稍等片刻。 / Please wait a little before starting another story.', 429);
     throw error;
   }

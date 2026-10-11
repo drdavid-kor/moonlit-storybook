@@ -12,6 +12,9 @@ assert(payload.prompt.includes('ONLY current_page'));
 assert.equal(payload.input_references.length, 1);
 assert.equal(payload.aspect_ratio, '16:9');
 assert.equal(payload.provider.allow_fallbacks, false);
+const futureBook = structuredClone(record);
+futureBook.result.pages[5].text.zh = 'FUTURE_EVENT_NOT_TO_PAINT';
+assert(!imageRequest(futureBook, 0).prompt.includes('FUTURE_EVENT_NOT_TO_PAINT'), 'Future pages must not leak into earlier illustrations.');
 
 const bytes = new Uint8Array(120);bytes.set([255, 216, 255]);
 const receipt = { data: [{ media_type: 'image/jpeg', b64_json: Buffer.from(bytes).toString('base64') }], usage: { cost: .018 } };

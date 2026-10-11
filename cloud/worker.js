@@ -125,6 +125,7 @@ async function api(request, env, user, url) {
     return json({ id: data.id }, 202);
   }
   if (path === '/api/generate') {
+    if (data?.kind === 'turn') throw new ClientError('实时续写已关闭。请由家长提前准备完整故事。 / Live continuation is disabled. Prepare a complete book first.', 410);
     let params;
     try { params = validate(data); } catch (e) { throw new ClientError(e.message); }
     for (const path of params.reference_illustrations || []) {
@@ -221,7 +222,7 @@ export default {
     let response;
     try {
       if (url.pathname.startsWith('/api/')) response = await api(request, env, user, url);
-      else if (['/', '/index.html', '/styles.css', '/app.js', '/scene.js', '/readiness.js'].includes(url.pathname) && ['GET', 'HEAD'].includes(request.method)) response = await env.ASSETS.fetch(request);
+      else if (['/', '/index.html', '/styles.css', '/app.js', '/scene.js', '/readiness.js', '/tree.js', '/export.js', '/subtitles.js'].includes(url.pathname) && ['GET', 'HEAD'].includes(request.method)) response = await env.ASSETS.fetch(request);
       else response = json({ error: 'Not found.' }, 404);
     } catch (error) {
       if (error instanceof ClientError) response = json({ error: error.message }, error.status);

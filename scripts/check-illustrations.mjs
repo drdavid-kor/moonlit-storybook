@@ -23,10 +23,7 @@ assert.throws(() => decodeImage({ data: [{ media_type: 'image/svg+xml', b64_json
 assert.throws(() => decodeImage({ data: [{ media_type: 'image/png', b64_json: receipt.data[0].b64_json }] }));
 assert.throws(() => decodeImage({ data: [{ media_type: 'image/jpeg', b64_json: '%%%invalid' }] }));
 const withImage = { ...page, illustration: { url: `/api/illustrations/${record.id}/0`, status: 'completed' } };
-const validated = validate({ kind: 'turn', request_id: 'illustration-test', concept: '合作', age: '6–8', input: '我们一起修桥', history: [withImage], reference_illustrations: [withImage.illustration.url] });
-assert(!('illustration' in validated.history[0]));
-assert.equal(validated.reference_illustrations.length, 1);
-assert.throws(() => validate({ ...validated, request_id: 'illustration-test', reference_illustrations: ['https://example.org/secret'] }));
+assert.throws(() => validate({ kind: 'turn', request_id: 'illustration-test', concept: '合作', age: '6–8', input: '我们一起修桥', history: [withImage] }), /disabled/);
 
 function environment(started = null, saved = false) {
   const row = { status: 'pending', started_at: started }, objects = new Map();

@@ -39,7 +39,7 @@ function atmosphereArt(scene){
  return `<svg class="scenery illustration-atmosphere" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid meet" aria-hidden="true">${breeze}${stars}${ripples}<g class="art-motes ${night?'night-motes':''}" fill="#fff0bd">${lights}</g></svg>`;
 }
 function drawScene(scene,home=false,illustration=null,preparedSource=null){
- const s=safeScene(scene),url=illustration?.status==='completed'&&/^\/api\/illustrations\/[a-f0-9]{24}\/[0-5]$/.test(illustration.url||'')?illustration.url:null;
+ const s=safeScene(scene),url=illustration?.status==='completed'&&/^\/api\/illustrations\/[a-f0-9]{24}\/[0-9]$/.test(illustration.url||'')?illustration.url:null;
  const source=preparedSource?.startsWith('blob:')?preparedSource:url;
  if(url)return `<img class="illustration-backdrop" src="${source}" alt="" aria-hidden="true"><div class="illustration-frame"><div class="illustration-artwork"><img class="story-illustration" src="${source}" data-source="${url}" alt="" decoding="async" fetchpriority="high">${atmosphereArt(s)}</div></div>`;
  return `${background(s.setting)}<div class="prop-layer prop-${s.prop}">${objectArt(s.prop)}</div><div class="actor-layer hero-${s.hero} ${home?'home-actor':''}">${character(s.hero,s.mood)}</div>`;

@@ -10,12 +10,15 @@ An immersive AI storybook prototype. Parents set the knowledge points and prepar
 
 ![AI page illustration with gentle animation / AI 逐幕插画与轻动画](docs/illustration-preview.png)
 
+![Finite story tree with three endings / 有三个结局的完整故事树](docs/story-tree-preview.png)
+
 ## How it works / 体验流程
 
 1. 家长输入 1–3 个知识点，一行一个，并选择年龄段。无需填写故事标题或剧情。 Parents enter one to three knowledge points and an age band.
-2. AI 依次准备三个完整的六幕童书，并根据每幕正文生成插画。一个知识点可以演绎不同故事；多个知识点轮流作为故事核心。 AI prepares three six-scene books and illustrates each page from its actual story text.
+2. AI 依次准备三本带有限故事树的童书，每本包含六幕主线、两条两幕支线和三个结局，共十幅插画。 AI prepares three finite story trees: six main scenes, two two-scene branches and three endings per book, with ten illustrations each.
 3. 三本的全部插画生成并载入后，首页一起展示实际封面和故事名称。孩子点开即可阅读，不触发故事或插画生成。 All page illustrations are generated, downloaded and decoded before covers appear; choosing a cover reuses the prepared images.
-4. 孩子输入自己的想法，让 AI 续写下一幕并绘制新的画面。 Children submit an idea to change the next scene and its illustration.
+4. 孩子在第二幕和第四幕选择故事中的行动，沿已准备好的路线抵达结局；阅读不调用 AI。 Children choose actions at the second and fourth main scenes, following prepared paths to an ending without AI calls.
+5. 一键导出完整 HTML 绘本，包含整棵故事树、全部插画与动效，可离线阅读。 One click exports a self-contained HTML book with the full tree, all illustrations and gentle motion for offline reading.
 
 准备过程中刷新会继续查询当前任务。失败后可以保持相同设置，继续准备剩余故事，复用已经完成的部分；不自动重试结果不确定的付费调用。
 
@@ -62,20 +65,20 @@ npm run build
 
 - Story-specific 2K illustrations with watercolor art direction, a gentle camera drift and SVG clouds, floating lights and water ripples where the scene includes water. Motion can be disabled. 每幕正文驱动 2K 水彩插画，叠加缓慢镜头变化、云雾、漂浮光点和水面波光；支持关闭动效。
 - Bilingual subtitles, keyboard navigation, optional system narration and voice-to-text input. 支持双语字幕、键盘翻幕、系统朗读与语音转文字。
-- Later pages use the first illustration as a character/style reference. New story turns use available prior illustrations. 后续页参考首幕的角色与画风，续写参考已生成的画面。
+- Each illustration uses the current route’s past events and the first image as an identity/style reference. Main actions remain above a lower caption-safe area. 插画只使用本路线的前文，参考首幕角色与画风；主要动作置于底部字幕安全区上方。
 - Parents can prepare illustrations for old text-only books from the saved-story library, without rewriting their text. Incomplete books are excluded from the child's shelf. 旧故事由家长在故事库中补齐插画；未完成全部插画的绘本不进入孩子的故事卡片。
 - Scene illustrations are generated; video and character animation are not generated. The prototype does not establish children's learning outcomes. 已实现逐幕插画；尚未生成视频或角色动作动画，也没有验证儿童学习效果。
-- Concept explanations refer to the original six-scene story; changed branches do not reuse its ending as their own learning conclusion. 原始概念说明只对应原始主线；共同创作分支不直接套用原始结论。
+- All three endings close their own route and include a route-specific discovery. Older books remain finite linear stories. Live continuation is disabled in the UI and the API. 三个结局各自收束路线并给出对应的小发现；旧绘本仍按有限主线阅读，界面和接口均已关闭实时续写。
 
 ## Data and credentials / 数据与凭据
 
-Knowledge points, story ideas, page text and reference illustrations are processed through OpenRouter. Audio is forwarded for transcription and not stored by this app. Calls may incur provider charges. Images are private and fetched through the same session-checked API as stories.
+Knowledge points, page text and reference illustrations are processed through OpenRouter. Audio is forwarded for transcription and not stored by this app. Calls may incur provider charges. Images are private and fetched through the same session-checked API as stories.
 
-知识点、故事文字、互动想法、参考插画与录音通过 OpenRouter 处理。录音仅用于转录，本应用不保存录音。真实模型调用可能产生费用。图片通过同源接口按会话读取。
+知识点、故事文字、参考插画与家长录音通过 OpenRouter 处理。录音仅用于转录，本应用不保存录音。真实模型调用可能产生费用。图片通过同源接口按会话读取。
 
-The cloud library belongs to an anonymous browser session protected by an HttpOnly, Secure, SameSite cookie. It has no accounts or cross-device synchronization. Records older than 30 days are removed by a daily cleanup; deletion can take up to one extra day. Browser settings, shelf IDs and recent branches stay in localStorage.
+The cloud library belongs to an anonymous browser session protected by an HttpOnly, Secure, SameSite cookie. It has no accounts or cross-device synchronization. Records older than 30 days are removed by a daily cleanup; deletion can take up to one extra day. Browser settings, prepared shelf IDs and subtitle position stay in localStorage. Exported HTML contains story content and embedded images, with no provider credentials or network access.
 
-公开版故事库按匿名浏览器会话隔离，没有账号或跨设备同步。云端每日清理超过 30 天的记录；知识设置、封面选择和最近分支保存在当前浏览器。
+公开版故事库按匿名浏览器会话隔离，没有账号或跨设备同步。云端每日清理超过 30 天的记录；知识设置、封面选择和字幕位置保存在当前浏览器。导出文件含故事与图片，可由用户自行保存或分享。
 
 The Python server listens only on `127.0.0.1` and keeps shared local records in `data/`. It is a local development server, not the production multi-visitor backend. Runtime records, secrets, verification receipts and personal deployment configuration are excluded from this repository.
 

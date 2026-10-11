@@ -1,4 +1,4 @@
-const imageRoute = /^\/api\/illustrations\/[a-f0-9]{24}\/[0-5]$/;
+const imageRoute = /^\/api\/illustrations\/[a-f0-9]{24}\/[0-9]$/;
 
 export function isBookReady(book) {
   return book?.status === 'completed' && book.result?.pages?.length > 0 &&
@@ -25,6 +25,7 @@ export function createArtworkCache(load) {
   const entries = new Map();
   return {
     source(path) { return entries.get(path)?.source; },
+    blob(path) { return entries.get(path)?.blob; },
     async preload(book) {
       if (!isBookReady(book)) throw new Error('The complete illustrated book is not ready.');
       await Promise.all(book.result.pages.map(async page => {
@@ -32,7 +33,7 @@ export function createArtworkCache(load) {
         let entry = entries.get(path);
         if (!entry) {
           entry = {};
-          entry.promise = Promise.resolve().then(() => load(path)).then(source => { entry.source = source; });
+          entry.promise = Promise.resolve().then(() => load(path)).then(result => { entry.source = typeof result === 'string' ? result : result.source;entry.blob = result.blob; });
           entries.set(path, entry);
           entry.promise.catch(() => entries.delete(path));
         }

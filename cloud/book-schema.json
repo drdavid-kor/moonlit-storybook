@@ -1,0 +1,416 @@
+{
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "object",
+      "properties": {
+        "zh": {
+          "type": "string",
+          "description": "简体中文"
+        },
+        "en": {
+          "type": "string",
+          "description": "Concise English translation"
+        }
+      },
+      "required": [
+        "zh",
+        "en"
+      ],
+      "additionalProperties": false
+    },
+    "hero_name": {
+      "type": "object",
+      "properties": {
+        "zh": {
+          "type": "string",
+          "description": "简体中文"
+        },
+        "en": {
+          "type": "string",
+          "description": "Concise English translation"
+        }
+      },
+      "required": [
+        "zh",
+        "en"
+      ],
+      "additionalProperties": false
+    },
+    "pages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "object",
+            "properties": {
+              "zh": {
+                "type": "string",
+                "description": "简体中文"
+              },
+              "en": {
+                "type": "string",
+                "description": "Concise English translation"
+              }
+            },
+            "required": [
+              "zh",
+              "en"
+            ],
+            "additionalProperties": false
+          },
+          "text": {
+            "type": "object",
+            "properties": {
+              "zh": {
+                "type": "string",
+                "description": "简体中文"
+              },
+              "en": {
+                "type": "string",
+                "description": "Concise English translation"
+              }
+            },
+            "required": [
+              "zh",
+              "en"
+            ],
+            "additionalProperties": false
+          },
+          "scene": {
+            "type": "object",
+            "properties": {
+              "setting": {
+                "type": "string",
+                "enum": [
+                  "forest",
+                  "lake",
+                  "village",
+                  "space"
+                ]
+              },
+              "hero": {
+                "type": "string",
+                "enum": [
+                  "bear",
+                  "fox",
+                  "rabbit"
+                ]
+              },
+              "prop": {
+                "type": "string",
+                "enum": [
+                  "boat",
+                  "bridge",
+                  "lantern",
+                  "basket",
+                  "star",
+                  "tree"
+                ]
+              },
+              "mood": {
+                "type": "string",
+                "enum": [
+                  "wonder",
+                  "thinking",
+                  "joy",
+                  "calm"
+                ]
+              },
+              "description": {
+                "type": "object",
+                "properties": {
+                  "zh": {
+                    "type": "string",
+                    "description": "简体中文"
+                  },
+                  "en": {
+                    "type": "string",
+                    "description": "Concise English translation"
+                  }
+                },
+                "required": [
+                  "zh",
+                  "en"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "setting",
+              "hero",
+              "prop",
+              "mood",
+              "description"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "title",
+          "text",
+          "scene"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 10,
+      "maxItems": 10,
+      "description": "依序返回 m1,m2,m3,m4,m5,m6,a1,a2,b1,b2 对应的十幕，不返回节点 ID。"
+    },
+    "reveal": {
+      "type": "object",
+      "properties": {
+        "concept": {
+          "type": "object",
+          "properties": {
+            "zh": {
+              "type": "string",
+              "description": "简体中文"
+            },
+            "en": {
+              "type": "string",
+              "description": "Concise English translation"
+            }
+          },
+          "required": [
+            "zh",
+            "en"
+          ],
+          "additionalProperties": false
+        },
+        "child_explanation": {
+          "type": "object",
+          "properties": {
+            "zh": {
+              "type": "string",
+              "description": "简体中文"
+            },
+            "en": {
+              "type": "string",
+              "description": "Concise English translation"
+            }
+          },
+          "required": [
+            "zh",
+            "en"
+          ],
+          "additionalProperties": false
+        },
+        "parent_note": {
+          "type": "object",
+          "properties": {
+            "zh": {
+              "type": "string",
+              "description": "简体中文"
+            },
+            "en": {
+              "type": "string",
+              "description": "Concise English translation"
+            }
+          },
+          "required": [
+            "zh",
+            "en"
+          ],
+          "additionalProperties": false
+        },
+        "boundary": {
+          "type": "object",
+          "properties": {
+            "zh": {
+              "type": "string",
+              "description": "简体中文"
+            },
+            "en": {
+              "type": "string",
+              "description": "Concise English translation"
+            }
+          },
+          "required": [
+            "zh",
+            "en"
+          ],
+          "additionalProperties": false
+        },
+        "everyday_example": {
+          "type": "object",
+          "properties": {
+            "zh": {
+              "type": "string",
+              "description": "简体中文"
+            },
+            "en": {
+              "type": "string",
+              "description": "Concise English translation"
+            }
+          },
+          "required": [
+            "zh",
+            "en"
+          ],
+          "additionalProperties": false
+        },
+        "mappings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "story": {
+                "type": "object",
+                "properties": {
+                  "zh": {
+                    "type": "string",
+                    "description": "简体中文"
+                  },
+                  "en": {
+                    "type": "string",
+                    "description": "Concise English translation"
+                  }
+                },
+                "required": [
+                  "zh",
+                  "en"
+                ],
+                "additionalProperties": false
+              },
+              "meaning": {
+                "type": "object",
+                "properties": {
+                  "zh": {
+                    "type": "string",
+                    "description": "简体中文"
+                  },
+                  "en": {
+                    "type": "string",
+                    "description": "Concise English translation"
+                  }
+                },
+                "required": [
+                  "zh",
+                  "en"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "story",
+              "meaning"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 3,
+          "maxItems": 3
+        }
+      },
+      "required": [
+        "concept",
+        "child_explanation",
+        "parent_note",
+        "boundary",
+        "everyday_example",
+        "mappings"
+      ],
+      "additionalProperties": false
+    },
+    "forks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "prompt": {
+            "type": "object",
+            "properties": {
+              "zh": {
+                "type": "string",
+                "description": "简体中文"
+              },
+              "en": {
+                "type": "string",
+                "description": "Concise English translation"
+              }
+            },
+            "required": [
+              "zh",
+              "en"
+            ],
+            "additionalProperties": false
+          },
+          "choices": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "label": {
+                  "type": "object",
+                  "properties": {
+                    "zh": {
+                      "type": "string",
+                      "description": "简体中文"
+                    },
+                    "en": {
+                      "type": "string",
+                      "description": "Concise English translation"
+                    }
+                  },
+                  "required": [
+                    "zh",
+                    "en"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "label"
+              ],
+              "additionalProperties": false
+            },
+            "minItems": 2,
+            "maxItems": 2
+          }
+        },
+        "required": [
+          "prompt",
+          "choices"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 2,
+      "maxItems": 2,
+      "description": "按 m2,m4 顺序；每处两个行动标签按主线、支线顺序。"
+    },
+    "endings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "zh": {
+            "type": "string",
+            "description": "简体中文"
+          },
+          "en": {
+            "type": "string",
+            "description": "Concise English translation"
+          }
+        },
+        "required": [
+          "zh",
+          "en"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 3,
+      "maxItems": 3,
+      "description": "按 m6,a2,b2 顺序，分别从该路线已发生的故事引出发现。"
+    }
+  },
+  "required": [
+    "title",
+    "hero_name",
+    "pages",
+    "reveal",
+    "forks",
+    "endings"
+  ],
+  "additionalProperties": false
+}

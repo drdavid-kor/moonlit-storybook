@@ -30,11 +30,11 @@
     <button id="prop-hotspot" class="hotspot prop-hotspot" aria-label="探索故事里的物件 Explore the story object"><span>✦</span></button>
     <div id="scene-bubble" class="scene-bubble" hidden></div>
     <div id="branch-note" class="branch-note" hidden></div>
+    <div id="subtitle-panel" class="subtitle-panel floating-subtitles"><div class="subtitle-meta"><span id="page-title"></span><div class="subtitle-tools"><button id="subtitle-drag" aria-label="拖动字幕 Move subtitles" title="拖动或用方向键移动 / Drag or use arrow keys">⠿ 拖动</button><button id="subtitle-reset" aria-label="复位字幕 Reset subtitles" title="复位字幕 / Reset subtitles">↺</button><button id="text-expand" aria-label="展开完整字幕 Expand subtitles" aria-expanded="false">⌃</button></div></div><p id="subtitle"></p><p id="subtitle-en" class="english-subtitle" hidden></p></div>
     <div class="reading-dock">
-      <div id="suggestions" class="suggestions"></div>
-      <div class="subtitle-panel"><div class="subtitle-meta"><span id="page-title"></span><button id="text-expand" aria-label="展开完整字幕 Expand subtitles" aria-expanded="false">⌃</button></div><p id="subtitle"></p><p id="subtitle-en" class="english-subtitle" hidden></p></div>
-      <form id="story-input-form" class="input-bar"><button id="reader-mic" class="mic-button" type="button" aria-label="语音输入 Voice input"><svg width="16" height="20" viewBox="0 0 20 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="6" y="1" width="8" height="13" rx="4"/><path d="M3 10v3a7 7 0 0 0 14 0v-3M10 20v3M6 23h8"/></svg></button><input id="story-input" maxlength="320" autocomplete="off" placeholder="和故事说句话，让接下来不一样…" aria-label="故事里的想法 Your story idea"><button id="send-idea" class="send-button" type="submit" aria-label="发送想法 Send idea">↑</button></form>
+      <p id="choice-prompt" class="choice-prompt"></p><div id="suggestions" class="suggestions"></div>
       <div class="page-controls"><button id="previous-page" class="quiet-button">← <span>上一幕</span></button><div id="page-dots" class="page-dots"></div><button id="next-page" class="quiet-button"><span>下一幕</span> →</button></div>
+      <div class="book-actions"><button id="tree-button">故事树 <span>Story tree</span></button><button id="restart-book">从头读 <span>Restart</span></button><button id="export-book">导出绘本 <span>Export book ↓</span></button></div>
     </div>
   </section>
   <div id="generation-status" class="generation-status" role="status" hidden><span class="small-orbit">✦</span><div><strong id="generation-title">故事正在悄悄长出来…</strong><small id="generation-detail">You can stay in this little world.</small></div><button id="hide-generation" aria-label="收起等待提示 Hide progress">×</button></div>
@@ -53,13 +53,14 @@
     <div class="settings-toggles"><label><input id="bilingual" type="checkbox"> 双语字幕 <span>Bilingual subtitles</span></label><label><input id="motion" type="checkbox" checked> 轻动画 <span>Gentle motion</span></label></div>
     <button id="prepare-submit" class="primary" type="submit">保存并准备三个故事 <span>Prepare three stories ↗</span></button>
     <p id="preparation-note" class="tiny-note" role="status"></p>
-    <p class="tiny-note">先生成三个故事和全部插画，准备完成后才显示封面。孩子点开就能读。<br>All three stories and their illustrations are prepared before covers appear.</p>
+    <p class="tiny-note">先生成三个故事的主线、支线、结局和全部插画，准备完成后才显示封面。<br>Every path, ending and illustration is prepared before covers appear.</p>
   </form>
   <button id="library-button" class="text-button">准备过的故事 · Saved stories →</button>
-  <p class="tiny-note">AI 根据每幕故事绘制插画，保留轻动画。续写会生成新的画面。<br>AI illustrations follow each scene, with gentle animation. New story turns get new illustrations.</p>
-  <p class="tiny-note">公开体验版：知识点、互动文字与录音通过 OpenRouter 处理。故事仅供当前浏览器读取，云端约保留 30 天；录音不保存。<br>Public demo: knowledge points, story ideas and voice input are processed via OpenRouter. Cloud stories are kept for about 30 days; recordings are not stored.</p>
+  <p class="tiny-note">每本新绘本包含六幕主线、两条支线和三个结局；阅读时选择已准备好的路线。可导出完整离线绘本。<br>Six main scenes, two branches, three endings. Explore prepared paths and export the whole book offline.</p>
+  <p class="tiny-note">公开体验版：知识点与家长录音通过 OpenRouter 处理。故事仅供当前浏览器读取，云端约保留 30 天；录音不保存。<br>Public demo: knowledge points and parent voice input are processed via OpenRouter. Cloud stories are kept for about 30 days; recordings are not stored.</p>
 </dialog>
 <dialog id="library-dialog" class="sheet"><button class="close-dialog" data-close="library-dialog" aria-label="关闭 Close">×</button><p class="overline">A WORLD YOU CAN COME BACK TO</p><h2>还想再读一遍</h2><div id="saved-books" class="saved-books"></div></dialog>
-<dialog id="reveal-dialog" class="sheet"><button class="close-dialog" data-close="reveal-dialog" aria-label="关闭 Close">×</button><p class="overline">A LITTLE DISCOVERY</p><h2 id="reveal-title"></h2><div id="reveal-content"></div><p id="branch-reveal-note" class="tiny-note" hidden>这是原故事的概念说明；共同创作的分支尚未重新审核。<br>This explanation belongs to the original story, not the new branch.</p><button id="finish-home" class="primary">晚安，回到小世界 <span>Good night ↗</span></button></dialog>
+<dialog id="reveal-dialog" class="sheet"><button class="close-dialog" data-close="reveal-dialog" aria-label="关闭 Close">×</button><p class="overline">A LITTLE DISCOVERY</p><h2 id="reveal-title"></h2><div id="reveal-content"></div><button id="finish-home" class="primary">晚安，回到小世界 <span>Good night ↗</span></button></dialog>
+<dialog id="tree-dialog" class="sheet tree-sheet"><button class="close-dialog" data-close="tree-dialog" aria-label="关闭 Close">×</button><p class="overline">EVERY PATH HAS AN ENDING</p><h2>故事的小路</h2><p id="tree-summary" class="sheet-subtitle"></p><div id="tree-map" class="tree-map"></div></dialog>
 <div id="notice" class="notice" role="status" hidden><span id="notice-text"></span><button id="notice-close" aria-label="关闭提示 Close notice">×</button></div>
 </body></html>

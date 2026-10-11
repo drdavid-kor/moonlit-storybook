@@ -29,3 +29,18 @@
 @keyframes art-twinkle{from{opacity:.15}to{opacity:.85}}
 .motion-paused .illustration-artwork{animation:none!important;transform:none!important}.motion-paused .illustration-atmosphere{display:none}
 @media(prefers-reduced-motion:reduce){.illustration-artwork{animation:none}.illustration-atmosphere{display:none}}
+
+/* Live continuation has been retired. */
+#story-input-form{display:none}
+
+/* Moveable subtitles remain separate from route controls. */
+.floating-subtitles{position:absolute;left:50%;bottom:155px;transform:translateX(-50%);width:min(780px,calc(100% - 120px));z-index:5;background:linear-gradient(120deg,#20334555,#23384a5c);backdrop-filter:blur(5px);box-shadow:0 8px 28px #132b3814;text-shadow:0 1px 4px #142939b0}
+.subtitle-tools{display:flex;align-items:center;gap:3px;flex-shrink:0}.subtitle-tools #subtitle-drag{cursor:grab;touch-action:none;user-select:none;font-size:10px;letter-spacing:.5px;padding:6px}.dragging #subtitle-drag{cursor:grabbing}.subtitle-panel.dragging{border-color:#eee7d388}.subtitle-meta #page-title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.choice-prompt{font-size:12px;text-align:center;line-height:1.6;margin:0 0 8px;text-shadow:0 2px 5px #152b3d}.choice-prompt:empty{display:none}
+.book-actions{display:flex;justify-content:center;align-items:center;gap:22px;margin-top:10px;font-size:10px;color:#e5dfcc}.book-actions button{border:0;background:#20334544;border-radius:8px;padding:7px 10px}.book-actions span{font-size:9px;opacity:.7;margin-left:4px}.book-actions button:hover{background:#20334588}
+.tree-sheet{width:min(880px,calc(100% - 32px))}.tree-map{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;margin-top:24px}.tree-column h3{font-size:12px;font-weight:400;color:#8d7761;margin:0 0 16px}.tree-node{display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:4px;border:1px solid #b9a48255;background:#f2ede277;color:#52626c;border-radius:12px;padding:12px;width:100%;margin-bottom:10px;font-family:inherit}.tree-node small{font-size:10px;opacity:.75}.tree-node.tree-ending{background:#d4dec56b;border-color:#7d976b66}.tree-node.current{outline:2px solid #849b7e}.tree-list{display:grid;gap:8px}.ending-discovery{padding:15px;border-left:3px solid #839577;background:#d4dec544}.offline-tools{display:flex;gap:12px;margin-left:auto;font-size:11px;white-space:nowrap}
+@media(max-width:600px){.floating-subtitles{width:calc(100% - 32px);bottom:190px;padding:10px 14px}.subtitle-tools #subtitle-drag{font-size:9px}.book-actions{gap:10px;margin-top:8px}.book-actions button{padding:7px 8px}.book-actions span{display:none}.tree-map{grid-template-columns:1fr;gap:14px}.offline-tools{font-size:10px;gap:7px}.choice-prompt{font-size:11px}.suggestion{max-width:100%;white-space:normal}}
+@media(max-height:520px) and (min-width:601px){.floating-subtitles{width:65%;bottom:125px}.subtitle-panel>p{max-height:72px}}
+.floating-subtitles{bottom:calc(var(--dock-height,135px) + 20px)}
+/* Keep focus changes from scrolling the immersive canvas and clipping its header. */
+.experience{overflow:clip}

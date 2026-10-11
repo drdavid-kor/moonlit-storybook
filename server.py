@@ -15,6 +15,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse
 from scripts.illustration import STYLE, image_request, decode_image
 from scripts.story_tree import compile_tree
+from scripts.motion import STYLE as MOTION_STYLE, motion_request
 
 ROOT = Path(__file__).resolve().parent
 PUBLIC = ROOT / 'public'
@@ -29,6 +30,7 @@ spec.loader.exec_module(openrouter)
 MODEL = os.environ.get('STORYBOOK_MODEL', 'google/gemini-3.8-flash')
 ASR_MODEL = 'qwen/qwen3-asr-0.6b'
 IMAGE_MODEL = os.environ.get('IMAGE_MODEL', STYLE['model'])
+MOTION_MODEL = os.environ.get('MOTION_MODEL', MOTION_STYLE['model'])
 POOL = concurrent.futures.ThreadPoolExecutor(max_workers=2)
 LOCK = threading.Lock()
 JOBS = {}
@@ -102,9 +104,85 @@ def paint_record(record):
         list(painters.map(lambda index: paint(index, [anchor]), range(1, len(pages))))
     return record
 
+def animate_record(record, preparing=False):
+    record['metadata']['motion_required'] = True
+    if record['metadata'].get('illustration_status') != 'completed':
+        return record
+    job_id = record['id']
+    state_file = DATA / (job_id + '.motion.json')
+    state = json.loads(state_file.read_text()) if state_file.is_file() else {}
+    clips = DATA / 'motion'
+    clips.mkdir(exist_ok=True)
+
+    def save_progress():
+        completed = sum(info['status'] == 'completed' for info in state.values())
+        for index, page in enumerate(record['result']['pages']):
+            info = state[str(index)]
+            page['motion'] = {'status': info['status']}
+            if info['status'] == 'completed':
+                page['motion']['url'] = f'/api/motion/{job_id}/{index}'
+        record['metadata'].update(motion_status='pending' if any(info['status'] == 'pending' for info in state.values()) else 'completed' if completed == len(state) else 'failed', motion_completed=completed, motion_total=len(state))
+        write_json(state_file, state)
+        JOBS[job_id] = {'id': job_id, 'status': 'pending', 'phase': 'animating', 'motion_completed': completed, 'motion_total': len(state)} if preparing else record
+        if not preparing:
+            write_json(DATA / (job_id + '.json'), record)
+
+    with LOCK:
+        for index in range(len(record['result']['pages'])):
+            state.setdefault(str(index), {'status': 'pending'})
+        save_progress()
+
+    def animate(index):
+        with LOCK:
+            info = state[str(index)]
+            if info['status'] != 'pending':
+                return
+            if info.get('started_at') and not info.get('provider_id'):
+                info['status'] = 'failed'
+                save_progress()
+                return
+            info['started_at'] = time.time()
+            save_progress()
+        try:
+            if not info.get('provider_id'):
+                source = art_reference(f'/api/illustrations/{job_id}/{index}')
+                raw, _ = openrouter.request('/videos', motion_request(record, index, source, MOTION_MODEL), timeout=90)
+                receipt = json.loads(raw)
+                provider_id = receipt.get('id', '')
+                if not re.fullmatch('[a-zA-Z0-9_-]{1,200}', provider_id):
+                    raise ValueError('Invalid animation identifier.')
+                with LOCK:
+                    info['provider_id'] = provider_id
+                    save_progress()
+            for _ in range(90):
+                raw, _ = openrouter.request('/videos/' + info['provider_id'], timeout=90)
+                receipt = json.loads(raw)
+                if receipt['status'] == 'completed':
+                    video, _ = openrouter.request('/videos/' + info['provider_id'] + '/content', timeout=90)
+                    if not 100 < len(video) < 24000000 or video[4:8] != b'ftyp':
+                        raise ValueError('Invalid animation content.')
+                    (clips / f'{job_id}-{index}.mp4').write_bytes(video)
+                    with LOCK:
+                        info.update(status='completed', usage=receipt.get('usage', {}))
+                        save_progress()
+                    return
+                if receipt['status'] in ('failed', 'cancelled'):
+                    raise ValueError('Animation failed.')
+                time.sleep(10)
+            raise ValueError('Animation wait expired.')
+        except Exception:
+            with LOCK:
+                info['status'] = 'failed'
+                save_progress()
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as animators:
+        list(animators.map(animate, range(len(record['result']['pages']))))
+    return record
+
 def upgrade_book(record):
     try:
         record = paint_record(record)
+        record = animate_record(record)
         write_json(DATA / (record['id'] + '.json'), record)
         with LOCK:
             JOBS[record['id']] = record
@@ -183,6 +261,7 @@ def generate(job_id, params):
         record = {'status': 'completed', 'id': job_id, 'result': result, 'metadata': metadata, 'params': params}
         if params['kind'] in ('book', 'turn'):
             record = paint_record(record)
+            record = animate_record(record, preparing=True)
         write_json(DATA / (job_id + '.json'), record)
         with LOCK:
             JOBS[job_id] = record
@@ -225,10 +304,26 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header('X-Content-Type-Options', 'nosniff')
             self.end_headers()
             return self.wfile.write(data)
+        motion = re.fullmatch(r'/api/motion/([a-f0-9]{24})/([0-9])', path)
+        if motion:
+            job_id, index = motion.groups()
+            state_file = DATA / (job_id + '.motion.json')
+            info = json.loads(state_file.read_text()).get(index, {}) if state_file.is_file() else {}
+            file = DATA / 'motion' / f'{job_id}-{index}.mp4'
+            if info.get('status') != 'completed' or not file.is_file():
+                return self.send_json({'error': 'Animation unavailable.'}, 404)
+            data = file.read_bytes()
+            self.send_response(200)
+            self.send_header('Content-Type', 'video/mp4')
+            self.send_header('Content-Length', str(len(data)))
+            self.send_header('Cache-Control', 'no-store')
+            self.send_header('X-Content-Type-Options', 'nosniff')
+            self.end_headers()
+            return self.wfile.write(data)
         if path == '/api/library':
             books = []
             for file in DATA.glob('*.json'):
-                if '.error.' in file.name or '.receipt.' in file.name or '.art.' in file.name:
+                if '.error.' in file.name or '.receipt.' in file.name or '.art.' in file.name or '.motion.' in file.name:
                     continue
                 record = json.loads(file.read_text())
                 if record.get('status') == 'completed' and record.get('metadata', {}).get('kind') == 'book':
@@ -246,7 +341,7 @@ class Handler(BaseHTTPRequestHandler):
                 if record.get('status') == 'pending':
                     record = {'id': job_id, 'status': 'failed', 'error': '服务在生成期间重启，请求结果未知；没有自动重复生成。 / The server restarted; generation outcome is unknown.'}
             return self.send_json(record or {'error': 'Unknown request.'}, 200 if record else 404)
-        files = {'/': 'index.html', '/index.html': 'index.html', '/styles.css': 'styles.css', '/app.js': 'app.js', '/scene.js': 'scene.js', '/readiness.js': 'readiness.js', '/tree.js': 'tree.js', '/export.js': 'export.js', '/subtitles.js': 'subtitles.js'}
+        files = {'/': 'index.html', '/index.html': 'index.html', '/styles.css': 'styles.css', '/app.js': 'app.js', '/scene.js': 'scene.js', '/readiness.js': 'readiness.js', '/tree.js': 'tree.js', '/export.js': 'export.js', '/subtitles.js': 'subtitles.js', '/playback.js': 'playback.js'}
         if path not in files:
             return self.send_json({'error': 'Not found.'}, 404)
         file = PUBLIC / files[path]
@@ -288,7 +383,7 @@ class Handler(BaseHTTPRequestHandler):
                 if not openrouter.api_key(required=False):
                     return self.send_json({'error': 'Configure the local OpenRouter credential.'}, 503)
                 with LOCK:
-                    if not record.get('metadata', {}).get('illustration_status') and job_id not in LOCAL_ART:
+                    if not record.get('metadata', {}).get('motion_status') and record.get('metadata', {}).get('illustration_status') != 'failed' and job_id not in LOCAL_ART:
                         LOCAL_ART.add(job_id)
                         JOBS[job_id] = record
                         POOL.submit(upgrade_book, record)

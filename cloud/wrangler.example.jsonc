@@ -13,7 +13,8 @@
   "vars": {
     "STORYBOOK_MODEL": "google/gemini-3.8-flash",
     "ASR_MODEL": "qwen/qwen3-asr-0.6b",
-    "IMAGE_MODEL": "bytedance-seed/seedream-5-0-flash"
+    "IMAGE_MODEL": "bytedance-seed/seedream-5-0-flash",
+    "MOTION_MODEL": "bytedance/seedance-1-5-pro"
   },
   "d1_databases": [
     {
@@ -33,6 +34,16 @@
       "name": "moonlit-illustration-upgrade",
       "binding": "ILLUSTRATOR",
       "class_name": "StoryIllustration"
+    },
+    {
+      "name": "moonlit-character-animation",
+      "binding": "ANIMATOR",
+      "class_name": "StoryAnimation"
+    },
+    {
+      "name": "moonlit-scene-animation",
+      "binding": "SCENE_ANIMATIONS",
+      "class_name": "SceneAnimation"
     }
   ],
   "triggers": {

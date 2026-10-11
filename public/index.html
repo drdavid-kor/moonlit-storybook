@@ -14,6 +14,7 @@
     <div id="reader-heading" class="reader-heading" hidden><span id="book-title"></span><small id="chapter-label"></small></div>
     <nav class="tools" aria-label="体验设置 Experience controls">
       <button id="world-button" class="round-button" aria-label="选择世界 Choose a world" title="选择世界 / Choose a world">◎</button>
+      <button id="motion-button" class="round-button" aria-label="暂停角色动画 Pause animation" aria-pressed="true" hidden>Ⅱ</button>
       <button id="sound-button" class="round-button" aria-label="朗读字幕 Read aloud" aria-pressed="false" title="朗读字幕 / Read aloud" hidden>♪</button>
       <button id="settings-button" class="round-button" aria-label="设置 Settings" title="设置 / Settings">⚙</button>
       <button id="fullscreen-button" class="round-button" aria-label="全屏 Full screen" title="全屏 / Full screen">⛶</button>
@@ -50,7 +51,7 @@
     <p class="field-help">一行一个，支持 1–3 个；也可以写上希望孩子理解的具体含义。<br>One per line, up to three. Add an explanation if you like.</p>
     <div class="prompt-chips"><button type="button" data-point="机会成本">＋ 机会成本</button><button type="button" data-point="分工与合作">＋ 分工与合作</button><button type="button" data-point="概率">＋ 概率</button></div>
     <label for="age">孩子的年龄 <span>Age</span></label><select id="age"><option>4–5</option><option selected>6–8</option><option>9–12</option></select>
-    <div class="settings-toggles"><label><input id="bilingual" type="checkbox"> 双语字幕 <span>Bilingual subtitles</span></label><label><input id="motion" type="checkbox" checked> 轻动画 <span>Gentle motion</span></label></div>
+    <div class="settings-toggles"><label><input id="bilingual" type="checkbox"> 双语字幕 <span>Bilingual subtitles</span></label><label><input id="motion" type="checkbox" checked> 角色与环境动画 <span>Character & scene motion</span></label></div>
     <button id="prepare-submit" class="primary" type="submit">保存并准备三个故事 <span>Prepare three stories ↗</span></button>
     <p id="preparation-note" class="tiny-note" role="status"></p>
     <p class="tiny-note">先生成三个故事的主线、支线、结局和全部插画，准备完成后才显示封面。<br>Every path, ending and illustration is prepared before covers appear.</p>

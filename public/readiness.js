@@ -1,8 +1,10 @@
 const imageRoute = /^\/api\/illustrations\/[a-f0-9]{24}\/[0-9]$/;
+const motionRoute = /^\/api\/motion\/[a-f0-9]{24}\/[0-9]$/;
 
 export function isBookReady(book) {
   return book?.status === 'completed' && book.result?.pages?.length > 0 &&
-    book.result.pages.every(page => page.illustration?.status === 'completed' && imageRoute.test(page.illustration.url || ''));
+    book.result.pages.every(page => page.illustration?.status === 'completed' && imageRoute.test(page.illustration.url || '') &&
+      (!book.metadata?.motion_required || (page.motion?.status === 'completed' && motionRoute.test(page.motion.url || ''))));
 }
 
 export function selectShelf(books, savedIds = []) {
@@ -26,10 +28,10 @@ export function createArtworkCache(load) {
   return {
     source(path) { return entries.get(path)?.source; },
     blob(path) { return entries.get(path)?.blob; },
-    async preload(book) {
+    async preload(book, { motion = false } = {}) {
       if (!isBookReady(book)) throw new Error('The complete illustrated book is not ready.');
-      await Promise.all(book.result.pages.map(async page => {
-        const path = page.illustration.url;
+      const paths = book.result.pages.flatMap(page => [page.illustration.url, ...(motion && page.motion?.status === 'completed' ? [page.motion.url] : [])]);
+      await Promise.all(paths.map(async path => {
         let entry = entries.get(path);
         if (!entry) {
           entry = {};

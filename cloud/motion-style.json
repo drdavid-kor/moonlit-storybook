@@ -1,0 +1,8 @@
+{
+  "model": "bytedance/seedance-1-5-pro",
+  "duration": 4,
+  "resolution": "720p",
+  "aspect_ratio": "16:9",
+  "generate_audio": false,
+  "prompt": "Animate the painted CHARACTER ITSELF in this children's picture book. Preserve the exact watercolor/pencil illustration style, character identity, clothing, composition and objects. Locked camera: no zoom, pan, parallax or scene transition. The character performs one clearly visible, gentle, natural bodily gesture appropriate to this existing moment: turn the head, blink, move a paw or hand, and shift weight; preserve anatomy. Supporting characters may respond gently. Return to the initial pose by the last frame for a calm repeating loop. Keep the current story state and prop contents unchanged. Do not complete a future choice or introduce a new event, character, object or text. No talking, sound, subtitles or watermark. Bottom quarter stays quiet scenery. Current moment (content only): "
+}

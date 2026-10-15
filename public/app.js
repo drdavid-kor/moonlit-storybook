@@ -3,7 +3,6 @@ import { isBookReady, selectShelf, createArtworkCache } from './readiness.js';
 import { routeTo, validateTree } from './tree.js';
 import { installSubtitles } from './subtitles.js';
 import { downloadBook } from './export.js';
-import { playSceneMotion } from './playback.js';
 const $=id=>document.getElementById(id);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const stored=(k,f)=>{try{return JSON.parse(localStorage.getItem(k))??f;}catch{return f;}};
@@ -24,20 +23,15 @@ if(state.preparation&&(!Array.isArray(state.preparation.points)||!Array.isArray(
 let pollTimer,bubbleTimer,micSession=null;
 const parentArtPending=new Map();
 const artwork=createArtworkCache(async path=>{
- const response=await fetch(path,{signal:AbortSignal.timeout(45000)});if(!response.ok)throw Error('Illustration unavailable.');
- const blob=await response.blob(),source=URL.createObjectURL(blob);
- try{
-  if(!path.startsWith('/api/motion/')){const image=new Image();image.src=source;await image.decode();}
-  return {source,blob};
- }catch(error){URL.revokeObjectURL(source);throw error;}
+ const response=await fetch(path);if(!response.ok)throw Error('Illustration unavailable.');
+ const blob=await response.blob(),source=URL.createObjectURL(blob),image=new Image();image.src=source;
+ try{await image.decode();return {source,blob};}catch(error){URL.revokeObjectURL(source);throw error;}
 });
 function notice(message){$('notice-text').textContent=message;$('notice').hidden=false;}
 function closeDialogs(){for(const dialog of document.querySelectorAll('dialog[open]'))dialog.close();}
 function openDialog(id){closeDialogs();$(id).showModal();}
-function renderLandscape(scene,home=false,illustration=null,motion=null){
- $('landscape').querySelector('video')?.pause();
- $('landscape').setAttribute('role','img');$('landscape').setAttribute('aria-label',scene.description?.zh||WORLDS[scene.setting]?.zh||'月光下的小世界');$('landscape').innerHTML=drawScene(scene,home,illustration,artwork.source(illustration?.url),motion,artwork.source(motion?.url));
- playSceneMotion($('landscape'),state.motion);
+function renderLandscape(scene,home=false,illustration=null){
+ $('landscape').setAttribute('role','img');$('landscape').setAttribute('aria-label',scene.description?.zh||WORLDS[scene.setting]?.zh||'月光下的小世界');$('landscape').innerHTML=drawScene(scene,home,illustration,artwork.source(illustration?.url));
  const illustrated=!!$('landscape').querySelector('.story-illustration');$('experience').classList.toggle('has-illustration',illustrated);
  $('artwork-status').hidden=home||illustrated;
  if(!home&&!illustrated)$('artwork-status').textContent=illustration?.status==='failed'?'这一幕的插画未完成，文字故事仍可阅读。 · The illustration is unavailable.':'正在为故事绘制插画… · Painting this story…';
@@ -60,9 +54,9 @@ async function refreshParentIllustrations(id){
  try{
   const response=await fetch('/api/jobs/'+id);if(!response.ok)throw Error();const record=await response.json();
   parentArtPending.set(id,record);renderLibrary();
-  if(record.metadata?.illustration_status==='pending'||record.metadata?.motion_status==='pending'||(!record.metadata?.motion_status&&record.metadata?.illustration_status!=='failed')){setTimeout(()=>refreshParentIllustrations(id),3000);return;}
+  if(record.metadata?.illustration_status==='pending'){setTimeout(()=>refreshParentIllustrations(id),3000);return;}
   parentArtPending.delete(id);await loadLibrary();renderPreparation();
-  notice(isBookReady(record)?'绘本已准备好，角色也会动了。 · The illustrated, animated book is ready.':'绘本画面或角色动画未全部完成，请在家长设置中准备新的故事。 · Some book media could not be prepared.');
+  notice(isBookReady(record)?'插画已准备好，可以直接阅读。 · All illustrations are ready.':'插画未全部完成，请在家长设置中准备新的故事。 · Prepare a new story in parent settings.');
  }catch{setTimeout(()=>refreshParentIllustrations(id),5000);}
 }
 function persistPreparation(){save('moonlit-story-preparation',state.preparation);}
@@ -78,7 +72,7 @@ function renderPreparation(){
 }
 function stopSpeech(){if('speechSynthesis'in window)speechSynthesis.cancel();state.speech=false;$('sound-button').setAttribute('aria-pressed','false');}
 function cancelMicrophone(){if(micSession){micSession.cancelled=true;if(micSession.recorder?.state==='recording')micSession.recorder.stop();micSession.stream?.getTracks().forEach(t=>t.stop());}}
-function showHome(){state.version++;stopSpeech();cancelMicrophone();state.view='home';$('experience').classList.remove('reading');$('home-view').hidden=false;$('reader-view').hidden=true;$('home-mark').hidden=false;$('back-home').hidden=true;$('reader-heading').hidden=true;$('sound-button').hidden=true;$('motion-button').hidden=true;$('world-button').hidden=false;$('scene-bubble').hidden=true;renderLandscape({setting:state.world,hero:state.world==='forest'?'fox':state.world==='space'?'rabbit':'bear',prop:state.world==='forest'?'lantern':state.world==='space'?'star':'boat'},true);$('world-label').textContent=WORLDS[state.world].zh;$('world-label-en').textContent=WORLDS[state.world].en;}
+function showHome(){state.version++;stopSpeech();cancelMicrophone();state.view='home';$('experience').classList.remove('reading');$('home-view').hidden=false;$('reader-view').hidden=true;$('home-mark').hidden=false;$('back-home').hidden=true;$('reader-heading').hidden=true;$('sound-button').hidden=true;$('world-button').hidden=false;$('scene-bubble').hidden=true;renderLandscape({setting:state.world,hero:state.world==='forest'?'fox':state.world==='space'?'rabbit':'bear',prop:state.world==='forest'?'lantern':state.world==='space'?'star':'boat'},true);$('world-label').textContent=WORLDS[state.world].zh;$('world-label-en').textContent=WORLDS[state.world].en;}
 function renderCards(){
  const grid=$('story-choices');grid.replaceChildren();
  $('empty-shelf').hidden=!!state.shelf.length;
@@ -100,7 +94,6 @@ async function loadLibrary(){
  try{
   const r=await fetch('/api/library');if(!r.ok)throw Error();state.books=(await r.json()).books;renderLibrary();
   const storedIds=stored('moonlit-ready-shelf',[]),shelf=selectShelf(state.books,Array.isArray(storedIds)?storedIds:[]);
-  if(shelf.length)$('story-choices').innerHTML='<div class="empty-shelf"><span aria-hidden="true">☾</span><p>正在打开今晚的故事…</p><small>Opening tonight’s stories…</small></div>';
   await Promise.all(shelf.map(book=>artwork.preload(book)));state.shelf=shelf;
   if(shelf.length)save('moonlit-ready-shelf',shelf.map(book=>book.id));renderCards();return true;
  }
@@ -110,11 +103,11 @@ function renderLibrary(){
  $('saved-books').replaceChildren();
 
  for(const record of state.books){
-  const current=parentArtPending.get(record.id)||record,ready=isBookReady(current),painting=parentArtPending.has(record.id)||(current.metadata?.illustration_status==='pending'||current.metadata?.motion_status==='pending');
+  const current=parentArtPending.get(record.id)||record,ready=isBookReady(current),painting=parentArtPending.has(record.id)||current.metadata?.illustration_status==='pending';
   const button=document.createElement('button');button.className='saved-book';
-  button.innerHTML=esc(record.result.title.zh)+`<small>${esc(record.result.title.en)}</small>`+(ready&&!current.metadata?.motion_status?'<small>让角色动起来 · Prepare character animation</small>':!ready?`<small>${painting?`${current.metadata?.motion_status?`角色动画 ${current.metadata.motion_completed||0}`:`插画 ${current.metadata?.illustration_completed||0}`} / ${current.result.pages.length} · Preparing the book…`:current.metadata?.motion_status==='failed'?'角色动画未完成 · Animation incomplete':current.metadata?.illustration_status==='failed'?'插画未完成 · Illustrations incomplete':'准备画面与角色动画 · Prepare book media'}</small>`:'');
-  button.disabled=painting||current.metadata?.illustration_status==='failed'||current.metadata?.motion_status==='failed';
-  button.addEventListener('click',()=>ready&&!current.metadata?.motion_status?prepareSavedIllustrations(current):ready?openBook(current):prepareSavedIllustrations(current));$('saved-books').append(button);
+  button.innerHTML=esc(record.result.title.zh)+`<small>${esc(record.result.title.en)}</small>`+(!ready?`<small>${painting?`插画准备中 ${current.metadata?.illustration_completed||0} / ${current.result.pages.length} · Preparing illustrations…`:current.metadata?.illustration_status==='failed'?'插画未完成 · Illustrations incomplete':'准备插画，再给孩子阅读 · Prepare illustrations'}</small>`:'');
+  button.disabled=painting||current.metadata?.illustration_status==='failed';
+  button.addEventListener('click',()=>ready?openBook(current):prepareSavedIllustrations(current));$('saved-books').append(button);
  }
  if(!state.books.length)$('saved-books').textContent='还没有保存的故事。 · No saved stories yet.';
 }
@@ -149,7 +142,7 @@ async function publishShelf(){
  prep.status='completed';persistPreparation();state.shelf=prep.completed;save('moonlit-ready-shelf',state.shelf.map(b=>b.id));
  await loadLibrary();renderCards();busy(false);
  $('generation-status').hidden=true;
- notice('三个绘本、全部插画和角色动画准备好了，点开就可以读。 · All stories and illustrations are ready.');
+ notice('三个绘本和全部插画准备好了，点开就可以读。 · All stories and illustrations are ready.');
 }
 function failPreparation(message){
  state.pending=null;save('moonlit-immersive-pending',null);
@@ -169,8 +162,7 @@ function renderPage(){
  const book=state.book.result,page=book.pages[state.page],tree=book.tree,last=tree?!!page.ending:state.page===book.pages.length-1;
  $('book-title').textContent=book.title.zh;$('chapter-label').textContent=last?'故事结束 · THE END':`SCENE ${String(state.path.length).padStart(2,'0')} · ${tree&&!tree.main_path.includes(page.id)?'SIDE PATH':'MAIN STORY'}`;
  $('page-title').textContent=page.title.zh;$('subtitle').textContent=page.text.zh;$('subtitle-en').textContent=page.text.en;$('subtitle-en').hidden=!state.english;
- $('subtitle-panel').classList.remove('expanded');$('text-expand').setAttribute('aria-expanded','false');renderLandscape(page.scene,false,page.illustration,page.motion);
- $('motion-button').hidden=!page.motion;$('motion-button').setAttribute('aria-pressed',String(state.motion));$('motion-button').setAttribute('aria-label',state.motion?'暂停角色动画 Pause animation':'播放角色动画 Play animation');$('motion-button').textContent=state.motion?'Ⅱ':'▷';
+ $('subtitle-panel').classList.remove('expanded');$('text-expand').setAttribute('aria-expanded','false');renderLandscape(page.scene,false,page.illustration);
  $('hero-hotspot').setAttribute('aria-label',`发现${book.hero_name.zh} Discover ${book.hero_name.en}`);
  $('suggestions').replaceChildren();$('choice-prompt').textContent=tree&&page.interaction?page.interaction.prompt.zh:last?'今晚的冒险到这里，故事有了自己的结局。 · The end of this little adventure.':'';
  if(tree&&page.interaction){for(const choice of page.interaction.choices){const button=document.createElement('button');button.className='suggestion';button.textContent=choice.label.zh;button.dataset.target=choice.target;button.addEventListener('click',()=>goNode(choice.target));$('suggestions').append(button);}}
@@ -192,7 +184,7 @@ async function startJob(params,purpose='prepare'){
  cancelMicrophone();params.request_id=crypto.randomUUID();state.pending={params,purpose,version:state.version,id:null};save('moonlit-immersive-pending',state.pending);busy();
  const preparing=purpose==='prepare';
  $('generation-title').textContent=preparing?`正在准备故事 ${params.story_index+1} / 3…`:'记住你的想法，翻开新的一幕…';
- $('generation-detail').textContent=preparing?'Preparing the whole story, illustrations and character animation before your child chooses.':'The next scene will follow your idea.';$('generation-status').hidden=false;
+ $('generation-detail').textContent=preparing?'Preparing complete stories and illustrations before your child chooses.':'The next scene will follow your idea.';$('generation-status').hidden=false;
  try{
   const r=await fetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(params)});const job=await r.json();
   if(!r.ok)throw Error(job.error||'Could not start.');state.pending.id=job.id;save('moonlit-immersive-pending',state.pending);pollJob();
@@ -203,10 +195,10 @@ async function pollJob(){
  try{
   const r=await fetch('/api/jobs/'+pending.id);const job=await r.json();
   if(r.status===404){failPreparation(job.error||'这次生成已不可用。 · Generation unavailable.');return;}
-  if(!r.ok)throw Error();if(job.status==='pending'){if(job.phase==='animating'){$('generation-title').textContent=`正在让故事 ${pending.params.story_index+1} / 3 的角色动起来…`;$('generation-detail').textContent=`角色动画 ${job.motion_completed} / ${job.motion_total} · Preparing character animation…`;}else if(job.phase==='illustrating'){$('generation-title').textContent=pending.purpose==='prepare'?`正在绘制故事 ${pending.params.story_index+1} / 3 的插画…`:'正在画出接下来的这一幕…';$('generation-detail').textContent=`插画 ${job.illustration_completed} / ${job.illustration_total} · Painting the story…`;}pollTimer=setTimeout(pollJob,1700);return;}
+  if(!r.ok)throw Error();if(job.status==='pending'){if(job.phase==='illustrating'){$('generation-title').textContent=pending.purpose==='prepare'?`正在绘制故事 ${pending.params.story_index+1} / 3 的插画…`:'正在画出接下来的这一幕…';$('generation-detail').textContent=`插画 ${job.illustration_completed} / ${job.illustration_total} · Painting the story…`;}pollTimer=setTimeout(pollJob,1700);return;}
   if(job.status!=='completed'){failPreparation(job.error||'这次没有得到可用的结果。 · No usable result.');return;}
   if(pending.purpose==='prepare'&&state.preparation?.id===pending.params.preparation_id){
-   if(!isBookReady(job)){failPreparation('这本故事的画面或角色动画未全部完成；本组封面暂不展示。 · This book is not fully prepared yet.');await loadLibrary();return;}
+   if(!isBookReady(job)){failPreparation('这本故事的插画未全部完成；本组封面暂不展示。 · This book is not fully illustrated yet.');await loadLibrary();return;}
    const prep=state.preparation;prep.completed[pending.params.story_index]=job;prep.index=[0,1,2].find(i=>!prep.completed[i])??3;persistPreparation();
    state.pending=null;save('moonlit-immersive-pending',null);busy();
    if(prep.index===3)await publishShelf();else startPreparedBook();
@@ -227,7 +219,6 @@ $('finish-home').addEventListener('click',()=>{closeDialogs();showHome();});
 $('notice-close').addEventListener('click',()=>$('notice').hidden=true);
 $('hide-generation').addEventListener('click',()=>$('generation-status').hidden=true);
 $('sound-button').addEventListener('click',readAloud);
-$('motion-button').addEventListener('click',()=>{$('motion').checked=!state.motion;savePreferences();});
 $('fullscreen-button').addEventListener('click',async()=>{if(!document.fullscreenEnabled){notice('场景已铺满窗口；这个浏览器暂不支持原生全屏。 · The world fills this window. Native full screen is unavailable here.');return;}try{if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen();}catch{notice('当前浏览器不支持原生全屏，场景已铺满窗口。 · The world fills this browser window.');}});
 document.addEventListener('fullscreenchange',()=>{const active=!!document.fullscreenElement;$('fullscreen-button').setAttribute('aria-pressed',String(active));$('fullscreen-button').setAttribute('aria-label',active?'退出全屏 Exit full screen':'全屏 Full screen');});
 $('library-button').addEventListener('click',()=>openDialog('library-dialog'));
@@ -251,7 +242,7 @@ $('hero-hotspot').addEventListener('click',()=>bubble(state.book.result.pages[st
 $('prop-hotspot').addEventListener('click',()=>bubble('看看这一幕里的物件，它们和角色的行动有什么关系？ · What do you notice in this scene?'));
 $('tree-button').addEventListener('click',showTree);
 $('restart-book').addEventListener('click',()=>{state.page=0;state.path=[0];renderPage();});
-$('export-book').addEventListener('click',async()=>{const record=state.book;if(!record)return;$('export-book').disabled=true;$('export-book').textContent='正在打包… · Exporting…';try{await downloadBook(record,artwork,atmosphereArt.toString());notice('完整绘本已导出，所有分支、结局、插画和角色动画都在一个 HTML 文件里，离线可阅读。 · Your whole book is ready to read offline.');}catch(error){console.warn('Book export failed',error.name,error.message);notice('暂时无法导出，请稍后再试。 · Could not export this book.');}finally{$('export-book').disabled=false;$('export-book').innerHTML='导出绘本 <span>Export book ↓</span>';}});
+$('export-book').addEventListener('click',async()=>{const record=state.book;if(!record)return;$('export-book').disabled=true;$('export-book').textContent='正在打包… · Exporting…';try{await downloadBook(record,artwork,atmosphereArt.toString());notice('完整绘本已导出，所有分支、结局和插画都在一个 HTML 文件里，离线可阅读。 · Your whole book is ready to read offline.');}catch(error){console.warn('Book export failed',error.name,error.message);notice('暂时无法导出，请稍后再试。 · Could not export this book.');}finally{$('export-book').disabled=false;$('export-book').innerHTML='导出绘本 <span>Export book ↓</span>';}});
 const savedSubtitle=stored('moonlit-subtitle-position',null);
 const subtitlePosition=installSubtitles($('subtitle-panel'),$('subtitle-drag'),$('subtitle-reset'),position=>save('moonlit-subtitle-position',position),savedSubtitle&&[savedSubtitle.x,savedSubtitle.y].every(n=>Number.isFinite(n)&&n>=0&&n<=1)?savedSubtitle:null);
 document.addEventListener('keydown',event=>{if(state.view!=='reader'||document.querySelector('dialog[open]')||['INPUT','TEXTAREA','SELECT','BUTTON'].includes(event.target.tagName))return;if(event.key==='ArrowRight'){event.preventDefault();nextPage();}if(event.key==='ArrowLeft'){event.preventDefault();previousPage();}});
@@ -266,7 +257,7 @@ async function init(){
  showHome();renderCards();await loadLibrary();
  let pending=stored('moonlit-immersive-pending',null);
  if(pending?.params.kind==='turn'){pending=null;save('moonlit-immersive-pending',null);}
- if(pending?.id){state.pending={...pending,version:-1};busy();$('generation-status').hidden=false;$('generation-title').textContent=pending.purpose==='prepare'?`继续准备故事 ${pending.params.story_index+1} / 3…`:'继续等候刚才的故事…';$('generation-detail').textContent=pending.purpose==='prepare'?'Preparing the whole story, illustrations and character animation before your child chooses.':'The next scene will follow your idea.';pollJob();}
+ if(pending?.id){state.pending={...pending,version:-1};busy();$('generation-status').hidden=false;$('generation-title').textContent=pending.purpose==='prepare'?`继续准备故事 ${pending.params.story_index+1} / 3…`:'继续等候刚才的故事…';$('generation-detail').textContent=pending.purpose==='prepare'?'Preparing complete stories and illustrations before your child chooses.':'The next scene will follow your idea.';pollJob();}
  else if(pending){failPreparation('上次连接中断，没有自动重复生成。可先查看已保存的故事。 · No automatic retry after a lost connection.');}
  else if(state.preparation?.status==='running'){startPreparedBook();}
 }

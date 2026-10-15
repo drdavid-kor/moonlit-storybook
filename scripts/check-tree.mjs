@@ -57,7 +57,6 @@ assert.throws(() => buildOfflineHTML(book, images.map(() => 'https://example.org
 // the separate export runtime, rather than assuming the online reader covers it.
 class Element {
   constructor() { this.children = [];this.style = {};this.offsetWidth = 680;this.offsetHeight = 150;this.checked = true;this.classList = { toggle() {}, add() {}, remove() {}, contains() { return false; } }; }
-  querySelector() { return null; }
   append(child) { this.children.push(child); }
   replaceChildren() { this.children = []; }
   addEventListener() {}

@@ -44,8 +44,3 @@
 .floating-subtitles{bottom:calc(var(--dock-height,135px) + 20px)}
 /* Keep focus changes from scrolling the immersive canvas and clipping its header. */
 .experience{overflow:clip}
-
-/* Generated bodily motion shares the original illustration frame. */
-.has-character-motion{animation:none!important;transform:none!important}
-.story-motion{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:contain;pointer-events:none}
-.story-motion[hidden],.story-illustration[hidden]{display:none!important}

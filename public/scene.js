@@ -38,12 +38,10 @@ function atmosphereArt(scene){
  const breeze=setting!=='space'?`<g class="art-mist" fill="none" stroke="#fff9e7" stroke-linecap="round"><path class="art-breeze" d="M-80 145q145-28 285-4t260-3"/><path class="art-breeze breeze-second" d="M1180 204q140-24 270-4t225-3"/></g>`:'';
  return `<svg class="scenery illustration-atmosphere" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid meet" aria-hidden="true">${breeze}${stars}${ripples}<g class="art-motes ${night?'night-motes':''}" fill="#fff0bd">${lights}</g></svg>`;
 }
-function drawScene(scene,home=false,illustration=null,preparedSource=null,motion=null,preparedMotion=null){
+function drawScene(scene,home=false,illustration=null,preparedSource=null){
  const s=safeScene(scene),url=illustration?.status==='completed'&&/^\/api\/illustrations\/[a-f0-9]{24}\/[0-9]$/.test(illustration.url||'')?illustration.url:null;
  const source=preparedSource?.startsWith('blob:')?preparedSource:url;
- const clip=motion?.status==='completed'&&/^\/api\/motion\/[a-f0-9]{24}\/[0-9]$/.test(motion.url||'')?motion.url:null;
- const clipSource=preparedMotion?.startsWith('blob:')?preparedMotion:clip;
- if(url)return `<img class="illustration-backdrop" src="${source}" alt="" aria-hidden="true"><div class="illustration-frame"><div class="illustration-artwork${clip?' has-character-motion':''}"><img class="story-illustration" src="${source}" data-source="${url}" alt="" decoding="async" fetchpriority="high">${clip?`<video class="story-motion" src="${clipSource}" poster="${source}" muted loop playsinline preload="auto" aria-hidden="true"></video>`:''}${atmosphereArt(s)}</div></div>`;
+ if(url)return `<img class="illustration-backdrop" src="${source}" alt="" aria-hidden="true"><div class="illustration-frame"><div class="illustration-artwork"><img class="story-illustration" src="${source}" data-source="${url}" alt="" decoding="async" fetchpriority="high">${atmosphereArt(s)}</div></div>`;
  return `${background(s.setting)}<div class="prop-layer prop-${s.prop}">${objectArt(s.prop)}</div><div class="actor-layer hero-${s.hero} ${home?'home-actor':''}">${character(s.hero,s.mood)}</div>`;
 }
 function coverArt(setting,hero,prop){return `<svg viewBox="0 0 280 180" aria-hidden="true"><rect width="280" height="180" fill="${WORLDS[setting].sky[1]}"/><circle cx="225" cy="37" r="19" fill="#edddbb"/><path d="M0 118 49 52 98 119 139 68 188 124 233 90 280 129V180H0Z" fill="${WORLDS[setting].mid}"/><path d="M0 158Q120 110 280 154V180H0Z" fill="${WORLDS[setting].near}"/><g transform="translate(150 60) scale(.45)">${objectArt(prop)}</g><g transform="translate(67 55) scale(.47)">${character(hero)}</g></svg>`;}

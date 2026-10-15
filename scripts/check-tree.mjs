@@ -38,13 +38,14 @@ assert(branchA.includes('safe area'));
 
 const exportBook = structuredClone(book);
 exportBook.pages[0].text = bi('</script><script>window.INJECTED=true</script>');
-exportBook.pages.forEach(p => { p.illustration = { url: '/api/illustrations/' + 'a'.repeat(24) + '/0', status: 'completed' }; });
+exportBook.pages.forEach(p => { p.motion={status:'completed',url:'/api/motion/'+ 'a'.repeat(24) + '/0'};p.illustration = { url: '/api/illustrations/' + 'a'.repeat(24) + '/0', status: 'completed' }; });
 const sceneCode = fs.readFileSync(new URL('../public/scene.js', import.meta.url), 'utf8');
 const atmosphere = sceneCode.slice(sceneCode.indexOf('function atmosphereArt'), sceneCode.indexOf('function drawScene')).trim();
 const images = Array.from({ length: 10 }, (_, i) => 'data:image/jpeg;base64,' + Buffer.from('image' + i).toString('base64'));
 const html = buildOfflineHTML(exportBook, images, 'body{color:white}', atmosphere);
 assert(!html.includes('/api/') && !html.includes('fetch(') && !html.includes('OPENROUTER'));
 assert(html.includes("connect-src 'none'"));
+assert(!html.includes('<video')&&!html.includes('data:video/')&&!html.includes('motion_required'),'Offline books must exclude legacy video assets and metadata.');
 assert.equal((html.match(/<script>/g) || []).length, 1);
 for (const image of images) assert(html.includes(image));
 assert(html.includes('\\u003c/script\\u003e'));

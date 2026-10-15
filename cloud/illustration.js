@@ -6,6 +6,17 @@ export const imagePath = (id, index) => `/api/illustrations/${id}/${index}`;
 export const imageKey = (id, index) => `stories/${id}/${index}`;
 export const imageRoute = /^\/api\/illustrations\/([a-f0-9]{24})\/([0-9])$/;
 
+// Saved books from the former video version remain readable as illustrations.
+export function illustrationOnly(record) {
+  const clean = structuredClone(record);
+  for (const page of clean.result?.pages || []) delete page.motion;
+  if (clean.metadata) {
+    for (const key of Object.keys(clean.metadata)) if (key.startsWith('motion_')) delete clean.metadata[key];
+    clean.metadata.render_mode = 'illustration-svg';
+  }
+  return clean;
+}
+
 export function imageRequest(record, index, model = DEFAULT_IMAGE_MODEL, references = []) {
   const pages = record.params.kind === 'turn' ? [record.result.page] : record.result.pages;
   const page = pages[index];
@@ -43,6 +54,8 @@ export async function initializeIllustrations(env, record) {
 }
 
 export async function attachIllustrations(env, record) {
+  record = illustrationOnly(record);
+  if (!record.result) return record;
   const rows = await env.DB.prepare('SELECT page_index, status, model FROM illustrations WHERE job_id = ? ORDER BY page_index').bind(record.id).all();
   if (!rows.results.length) return record;
   const result = structuredClone(record.result);

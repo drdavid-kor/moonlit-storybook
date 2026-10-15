@@ -10,6 +10,10 @@ delete incomplete[1].result.pages[5].illustration;
 assert(!isBookReady(incomplete[1]), 'Text completion alone cannot make a child-facing cover ready.');
 assert.deepEqual(selectShelf(incomplete, ids), [], 'An old saved shelf cannot bypass the illustration gate.');
 assert.deepEqual(selectShelf(books, ids).map(item => item.id), ids);
+const formerVideoBook=structuredClone(books[0]);formerVideoBook.metadata={motion_required:true,motion_status:'failed'};formerVideoBook.result.pages.forEach(page=>{page.motion={status:'pending',url:'/api/motion/'+formerVideoBook.id+'/0'};});
+assert(isBookReady(formerVideoBook),'Former video metadata must not block an illustrated book.');
+const artOnlyLoads=[];await createArtworkCache(async path=>{artOnlyLoads.push(path);return 'blob:'+path;}).preload(formerVideoBook);
+assert(artOnlyLoads.every(path=>path.startsWith('/api/illustrations/')),'Reading an old book must load illustrations only.');
 const failed = structuredClone(books[0]);failed.result.pages[2].illustration.status = 'failed';
 assert(!isBookReady(failed), 'A failed scene must not be advertised as a complete illustrated book.');
 

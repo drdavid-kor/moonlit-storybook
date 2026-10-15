@@ -1,6 +1,6 @@
 # 月亮书房 / Moonlit Stories
 
-全屏、沉浸式、可交互的 AI 动态童书原型。家长输入知识点，先准备完整故事，再让孩子选择封面进入阅读。
+全屏、沉浸式、可交互的 AI 动态童书原型，采用 AI 插画与 SVG 动效。家长输入知识点，先准备完整故事，再让孩子选择封面进入阅读。
 
 An immersive AI storybook prototype. Parents set the knowledge points and prepare complete stories before children choose a cover and start reading.
 
@@ -67,7 +67,7 @@ npm run build
 - Bilingual subtitles, keyboard navigation, optional system narration and voice-to-text input. 支持双语字幕、键盘翻幕、系统朗读与语音转文字。
 - Each illustration uses the current route’s past events and the first image as an identity/style reference. Main actions remain above a lower caption-safe area. 插画只使用本路线的前文，参考首幕角色与画风；主要动作置于底部字幕安全区上方。
 - Parents can prepare illustrations for old text-only books from the saved-story library, without rewriting their text. Incomplete books are excluded from the child's shelf. 旧故事由家长在故事库中补齐插画；未完成全部插画的绘本不进入孩子的故事卡片。
-- Scene illustrations are generated; video and character animation are not generated. The prototype does not establish children's learning outcomes. 已实现逐幕插画；尚未生成视频或角色动作动画，也没有验证儿童学习效果。
+- The generation pipeline creates illustrations only. SVG provides scene motion; no video-generation model is called. The prototype does not establish children's learning outcomes. 已实现逐幕插画与 SVG 环境动效，不调用短视频生成模型，也没有验证儿童学习效果。
 - All three endings close their own route and include a route-specific discovery. Older books remain finite linear stories. Live continuation is disabled in the UI and the API. 三个结局各自收束路线并给出对应的小发现；旧绘本仍按有限主线阅读，界面和接口均已关闭实时续写。
 
 ## Data and credentials / 数据与凭据

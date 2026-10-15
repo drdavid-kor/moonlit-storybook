@@ -4,7 +4,7 @@ import { DEFAULT_IMAGE_MODEL, imageRoute, imageKey, initializeIllustrations, att
 
 const FAILED = '这次没有得到可用的故事。请求没有自动重试；已保存的故事仍可阅读。 / No usable story was returned. No automatic retry.';
 const UNKNOWN = '这次生成的结果尚不确定，没有自动重复生成。可以先阅读已保存的故事。 / Generation outcome is unknown; no automatic retry.';
-const CSP = "default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://cloudflareinsights.com; object-src 'none'; base-uri 'none'; frame-ancestors 'none'";
+const CSP = "default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self'; img-src 'self' data: blob:; media-src 'none'; connect-src 'self' https://cloudflareinsights.com; object-src 'none'; base-uri 'none'; frame-ancestors 'none'";
 const json = (value, status = 200) => Response.json(value, { status, headers: { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' } });
 class ClientError extends Error { constructor(message, status = 400) { super(message); this.status = status; } }
 const digest = async text => [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text)))].map(b => b.toString(16).padStart(2, '0')).join('');
@@ -84,7 +84,7 @@ async function recordFor(env, row) {
 async function api(request, env, user, url) {
   const path = url.pathname;
   if (request.method === 'GET') {
-    if (path === '/api/status') return json({ configured: !!env.OPENROUTER_API_KEY, model: env.STORYBOOK_MODEL, image_model: env.IMAGE_MODEL || DEFAULT_IMAGE_MODEL });
+    if (path === '/api/status') return json({ configured: !!env.OPENROUTER_API_KEY, model: env.STORYBOOK_MODEL, image_model: env.IMAGE_MODEL || DEFAULT_IMAGE_MODEL, render_mode: 'illustration-svg' });
     const image = path.match(imageRoute);
     if (image) {
       const permitted = await env.DB.prepare("SELECT i.status FROM illustrations i JOIN jobs j ON j.id = i.job_id WHERE i.job_id = ? AND i.page_index = ? AND j.owner = ? AND i.status = 'completed'").bind(image[1], Number(image[2]), user.owner).first();
@@ -244,6 +244,9 @@ export default {
       const cutoff = Date.now() - 30 * 86400000;
       const expired = await env.DB.prepare('SELECT i.job_id, i.page_index FROM illustrations i JOIN jobs j ON j.id = i.job_id WHERE j.created_at < ?').bind(cutoff).all();
       const keys = expired.results.map(row => imageKey(row.job_id, row.page_index));
+      // Retain the established expiry policy for former video-version assets.
+      const legacy = await env.DB.prepare('SELECT m.job_id, m.page_index FROM motions m JOIN jobs j ON j.id = m.job_id WHERE j.created_at < ?').bind(cutoff).all();
+      keys.push(...legacy.results.map(row => `motion/${row.job_id}/${row.page_index}.mp4`));
       for (let start = 0; start < keys.length; start += 1000) await env.ART.delete(keys.slice(start, start + 1000));
       await env.DB.batch([
         env.DB.prepare('DELETE FROM jobs WHERE created_at < ?').bind(cutoff),

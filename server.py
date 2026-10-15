@@ -49,6 +49,15 @@ def art_reference(path):
         return None
     return f"data:{info['mime']};base64," + base64.b64encode(file.read_bytes()).decode()
 
+def illustration_only(record):
+    clean = json.loads(json.dumps(record))
+    for page in clean.get('result', {}).get('pages', []):
+        page.pop('motion', None)
+    if 'metadata' in clean:
+        clean['metadata'] = {key: value for key, value in clean['metadata'].items() if not key.startswith('motion_')}
+        clean['metadata']['render_mode'] = 'illustration-svg'
+    return clean
+
 def paint_record(record):
     job_id = record['id']
     pages = [record['result']['page']] if record['params']['kind'] == 'turn' else record['result']['pages']
@@ -100,7 +109,7 @@ def paint_record(record):
     anchor = f'/api/illustrations/{job_id}/0'
     with concurrent.futures.ThreadPoolExecutor(max_workers=3) as painters:
         list(painters.map(lambda index: paint(index, [anchor]), range(1, len(pages))))
-    return record
+    return illustration_only(record)
 
 def upgrade_book(record):
     try:
@@ -209,7 +218,7 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         path = urlparse(self.path).path
         if path == '/api/status':
-            return self.send_json({'configured': bool(openrouter.api_key(required=False)), 'model': MODEL, 'image_model': IMAGE_MODEL})
+            return self.send_json({'configured': bool(openrouter.api_key(required=False)), 'model': MODEL, 'image_model': IMAGE_MODEL, 'render_mode': 'illustration-svg'})
         image = re.fullmatch(r'/api/illustrations/([a-f0-9]{24})/([0-9])', path)
         if image:
             job_id, index = image.groups()
@@ -232,7 +241,7 @@ class Handler(BaseHTTPRequestHandler):
                     continue
                 record = json.loads(file.read_text())
                 if record.get('status') == 'completed' and record.get('metadata', {}).get('kind') == 'book':
-                    books.append(record)
+                    books.append(illustration_only(record))
             books.sort(key=lambda b: b['metadata']['generated_at'], reverse=True)
             return self.send_json({'books': books[:30]})
         if path.startswith('/api/jobs/'):
@@ -245,7 +254,7 @@ class Handler(BaseHTTPRequestHandler):
                 record = json.loads((DATA / (job_id + '.json')).read_text())
                 if record.get('status') == 'pending':
                     record = {'id': job_id, 'status': 'failed', 'error': '服务在生成期间重启，请求结果未知；没有自动重复生成。 / The server restarted; generation outcome is unknown.'}
-            return self.send_json(record or {'error': 'Unknown request.'}, 200 if record else 404)
+            return self.send_json(illustration_only(record) if record else {'error': 'Unknown request.'}, 200 if record else 404)
         files = {'/': 'index.html', '/index.html': 'index.html', '/styles.css': 'styles.css', '/app.js': 'app.js', '/scene.js': 'scene.js', '/readiness.js': 'readiness.js', '/tree.js': 'tree.js', '/export.js': 'export.js', '/subtitles.js': 'subtitles.js'}
         if path not in files:
             return self.send_json({'error': 'Not found.'}, 404)
